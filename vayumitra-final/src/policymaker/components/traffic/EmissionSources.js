@@ -1,14 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
-import { mockEmissionSources } from '../../data/mockData';
+import { fetchEmissions } from '../../../api/services';
 
 const EmissionSources = () => {
+  const [sources, setSources] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchEmissions();
+        setSources(data);
+      } catch (error) {
+        console.error("Error loading emissions:", error);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (!sources.length) return <Card>Loading emissions...</Card>;
+
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">🏭 Emission Sources</h2>
-      
+
       <div className="space-y-4">
-        {mockEmissionSources.map((source) => (
+        {sources.map((source) => (
           <div key={source.source}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">

@@ -1,15 +1,31 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { mockHistoricalData } from '../../data/mockData';
+import { fetchHistory } from '../../../api/services';
 
 const WeeklyTrend = () => {
+  const [historyData, setHistoryData] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchHistory();
+        setHistoryData(data);
+      } catch (error) {
+        console.error("Error loading weekly trend:", error);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (!historyData.length) return <Card>Loading weekly trend...</Card>;
+
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">📅 Weekly Trend Chart</h2>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={mockHistoricalData}>
+          <LineChart data={historyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis dataKey="day" stroke="#64748b" />
             <YAxis stroke="#64748b" />

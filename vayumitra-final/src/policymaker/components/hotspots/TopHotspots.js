@@ -1,14 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
-import { mockHotspots } from '../../data/mockData';
+import { fetchHotspots } from '../../../api/services';
 
 const TopHotspots = ({ onSelectHotspot }) => {
+  const [hotspots, setHotspots] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchHotspots();
+        setHotspots(data);
+      } catch (error) {
+        console.error("Error loading hotspots:", error);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (!hotspots.length) return <Card>Loading hotspots...</Card>;
+
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">🏆 Top 10 Hotspots</h2>
-      
+
       <div className="space-y-2 max-h-96 overflow-y-auto">
-        {mockHotspots.map((hotspot) => (
+        {hotspots.map((hotspot) => (
           <div
             key={hotspot.rank}
             onClick={() => onSelectHotspot(hotspot)}

@@ -1,8 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
-import { mockAlerts } from '../../data/mockData';
+import { fetchAlerts } from '../../../api/services';
 
 const RecentAlerts = () => {
+  const [alerts, setAlerts] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchAlerts();
+        setAlerts(data);
+      } catch (error) {
+        console.error("Error loading alerts:", error);
+      }
+    };
+    loadData();
+  }, []);
+
   const getSeverityColor = (severity) => {
     const colors = {
       severe: 'bg-red-100 text-red-700 border-red-300',
@@ -23,11 +37,13 @@ const RecentAlerts = () => {
     return icons[severity] || '🟡';
   };
 
+  if (!alerts.length) return <Card>Loading alerts...</Card>;
+
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">🚨 Recent Alerts</h2>
       <div className="space-y-3">
-        {mockAlerts.slice(0, 4).map((alert) => (
+        {alerts.slice(0, 4).map((alert) => (
           <div
             key={alert.id}
             className={`p-3 rounded-lg border-l-4 ${getSeverityColor(alert.severity)}`}

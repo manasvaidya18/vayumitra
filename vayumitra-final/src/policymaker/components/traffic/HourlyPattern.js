@@ -1,16 +1,32 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { mockHourlyTraffic } from '../../data/mockData';
+import { fetchTrafficHourly } from '../../../api/services';
 
 const HourlyPattern = () => {
+  const [hourlyData, setHourlyData] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchTrafficHourly();
+        setHourlyData(data);
+      } catch (error) {
+        console.error("Error loading hourly traffic:", error);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (!hourlyData.length) return <Card>Loading hourly patterns...</Card>;
+
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">📈 Hourly Traffic Pattern</h2>
-      
+
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={mockHourlyTraffic}>
+          <BarChart data={hourlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis dataKey="hour" stroke="#64748b" />
             <YAxis stroke="#64748b" />

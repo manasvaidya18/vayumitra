@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { MapPin, Clock, TrendingUp, AlertCircle, Calendar, Sun, CloudRain } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { getAQILevel, getGradientForAQI } from '../../utils/helpers';
+import { fetchCitizenAQI } from '../../../api/services';
 import Card from '../common/Card';
 
 const AQIPanel = () => {
@@ -10,35 +11,36 @@ const AQIPanel = () => {
   const [activeTab, setActiveTab] = useState('24h');
 
   useEffect(() => {
-    const cityData = localStorage.getItem('selectedCity');
-    if (cityData) {
-      const city = JSON.parse(cityData);
-      
-      // Generate prediction data
-      const predictions = {
-        hourly24: generate24HourPrediction(city.aqi),
-        daily3: generate3DayPrediction(city.aqi),
-        daily7: generate7DayPrediction(city.aqi)
-      };
+    const loadData = async () => {
+      try {
+        const aqiData = await fetchCitizenAQI();
 
-      const cityAQIData = {
-        aqi: city.aqi,
-        level: city.level,
-        color: city.color,
-        location: `${city.name}, ${city.state}`,
-        lastUpdated: new Date().toLocaleString(),
-        predictions
-      };
-      
-      setData(cityAQIData);
-    }
+        // Generate prediction data
+        const predictions = {
+          hourly24: generate24HourPrediction(aqiData.aqi),
+          daily3: generate3DayPrediction(aqiData.aqi),
+          daily7: generate7DayPrediction(aqiData.aqi)
+        };
+
+        const cityAQIData = {
+          ...aqiData,
+          lastUpdated: new Date(aqiData.lastUpdated).toLocaleString(),
+          predictions
+        };
+
+        setData(cityAQIData);
+      } catch (error) {
+        console.error("Error loading AQI data:", error);
+      }
+    };
+    loadData();
   }, []);
 
   // Generate 24-hour prediction (hourly)
   const generate24HourPrediction = (baseAQI) => {
     const hours = [];
     const now = new Date();
-    
+
     // Morning dip, peak during traffic hours
     const patterns = [
       0.85, 0.78, 0.72, 0.68, 0.67, 0.73, // 12am-6am
@@ -51,14 +53,14 @@ const AQIPanel = () => {
       const hour = new Date(now.getTime() + i * 60 * 60 * 1000);
       const hourStr = hour.getHours();
       const displayHour = hourStr === 0 ? '12 AM' : hourStr < 12 ? `${hourStr} AM` : hourStr === 12 ? '12 PM' : `${hourStr - 12} PM`;
-      
+
       hours.push({
         time: displayHour,
         aqi: Math.round(baseAQI * patterns[i]),
         hour: hourStr
       });
     }
-    
+
     return hours;
   };
 
@@ -66,14 +68,14 @@ const AQIPanel = () => {
   const generate3DayPrediction = (baseAQI) => {
     const days = [];
     const dayNames = ['Today', 'Tomorrow', 'Day 3'];
-    
+
     // Slight variation day by day
     const dayFactors = [1.0, 0.92, 0.88];
-    
+
     dayNames.forEach((day, dayIdx) => {
       const timeSlots = ['Morning', 'Afternoon', 'Evening', 'Night'];
       const patterns = [0.75, 0.95, 1.25, 1.05]; // Pattern within each day
-      
+
       timeSlots.forEach((slot, slotIdx) => {
         days.push({
           time: `${day} ${slot}`,
@@ -83,7 +85,7 @@ const AQIPanel = () => {
         });
       });
     });
-    
+
     return days;
   };
 
@@ -92,15 +94,15 @@ const AQIPanel = () => {
     const days = [];
     const now = new Date();
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    
+
     // Weekly pattern (weekends better, weekdays worse)
     const weekPatterns = [0.82, 0.98, 1.05, 1.08, 1.03, 0.95, 0.80];
-    
+
     for (let i = 0; i < 7; i++) {
       const date = new Date(now.getTime() + i * 24 * 60 * 60 * 1000);
       const dayName = dayNames[date.getDay()];
       const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
-      
+
       days.push({
         day: i === 0 ? 'Today' : dayName,
         date: dateStr,
@@ -109,7 +111,7 @@ const AQIPanel = () => {
         condition: i % 3 === 0 ? 'Clear' : i % 3 === 1 ? 'Cloudy' : 'Rainy'
       });
     }
-    
+
     return days;
   };
 
@@ -145,7 +147,7 @@ const AQIPanel = () => {
     if (active && payload && payload.length) {
       const item = payload[0].payload;
       const { level: tooltipLevel } = getAQILevel(item.aqi);
-      
+
       return (
         <div className="glass-card p-3 border border-white/50">
           <p className="text-sm font-semibold text-slate-800">
@@ -170,15 +172,15 @@ const AQIPanel = () => {
     <Card className="overflow-hidden">
       <div className="space-y-6">
         {/* Current AQI Display - Modern Card Design */}
-        <div className="relative overflow-hidden rounded-2xl p-8" style={{ 
+        <div className="relative overflow-hidden rounded-2xl p-8" style={{
           background: `linear-gradient(135deg, ${color}15 0%, ${color}05 100%)`,
           borderLeft: `6px solid ${color}`
         }}>
           {/* Decorative Background Elements */}
-          <div className="absolute top-0 right-0 w-64 h-64 opacity-10" style={{ 
-            background: `radial-gradient(circle, ${color} 0%, transparent 70%)` 
+          <div className="absolute top-0 right-0 w-64 h-64 opacity-10" style={{
+            background: `radial-gradient(circle, ${color} 0%, transparent 70%)`
           }} />
-          
+
           <div className="relative z-10">
             {/* Location Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
@@ -192,7 +194,7 @@ const AQIPanel = () => {
                   <span>Last updated: {data.lastUpdated}</span>
                 </div>
               </div>
-              
+
               {/* Status Badge */}
               <motion.div
                 initial={{ scale: 0 }}
@@ -200,8 +202,8 @@ const AQIPanel = () => {
                 transition={{ type: 'spring', duration: 0.6 }}
                 className="mt-4 md:mt-0"
               >
-                <div className="inline-flex items-center px-6 py-3 rounded-2xl text-white font-bold text-lg shadow-xl" 
-                     style={{ backgroundColor: color }}>
+                <div className="inline-flex items-center px-6 py-3 rounded-2xl text-white font-bold text-lg shadow-xl"
+                  style={{ backgroundColor: color }}>
                   {level}
                 </div>
               </motion.div>
@@ -217,8 +219,8 @@ const AQIPanel = () => {
                 className="flex-shrink-0"
               >
                 <div className="relative">
-                  <div className="text-center p-8 rounded-3xl bg-white/80 backdrop-blur-sm shadow-2xl border-4" 
-                       style={{ borderColor: color }}>
+                  <div className="text-center p-8 rounded-3xl bg-white/80 backdrop-blur-sm shadow-2xl border-4"
+                    style={{ borderColor: color }}>
                     <div className="text-4xl font-black text-blue-900" style={{ color }}>
                       {data.aqi}
                     </div>
@@ -226,7 +228,7 @@ const AQIPanel = () => {
                       Current AQI
                     </div>
                   </div>
-                  
+
                   {/* Floating indicator */}
                   <motion.div
                     animate={{ y: [0, -10, 0] }}
@@ -315,9 +317,9 @@ const AQIPanel = () => {
                       <h4 className="text-sm font-bold text-amber-900 mb-1">Health Advisory</h4>
                       <p className="text-sm text-amber-800">
                         {data.aqi > 150 ? 'Avoid outdoor activities. Use N95 masks if going out.' :
-                         data.aqi > 100 ? 'Sensitive groups should limit outdoor exposure.' :
-                         data.aqi > 50 ? 'Air quality is acceptable for most people.' :
-                         'Air quality is good. Enjoy outdoor activities!'}
+                          data.aqi > 100 ? 'Sensitive groups should limit outdoor exposure.' :
+                            data.aqi > 50 ? 'Air quality is acceptable for most people.' :
+                              'Air quality is good. Enjoy outdoor activities!'}
                       </p>
                     </div>
                   </div>
@@ -340,11 +342,10 @@ const AQIPanel = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
-                      activeTab === tab.id
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-glow'
-                        : 'bg-white/60 text-slate-700 border border-slate-200 hover:border-indigo-300'
-                    }`}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all ${activeTab === tab.id
+                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-glow'
+                      : 'bg-white/60 text-slate-700 border border-slate-200 hover:border-indigo-300'
+                      }`}
                   >
                     <Icon className="w-4 h-4" />
                     <span className="hidden sm:inline">{tab.label}</span>
@@ -371,16 +372,16 @@ const AQIPanel = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis 
-                  dataKey={activeTab === '7d' ? 'day' : 'time'} 
-                  stroke="#64748b" 
+                <XAxis
+                  dataKey={activeTab === '7d' ? 'day' : 'time'}
+                  stroke="#64748b"
                   style={{ fontSize: '11px' }}
                   angle={activeTab === '24h' ? -45 : 0}
                   textAnchor={activeTab === '24h' ? 'end' : 'middle'}
                   height={activeTab === '24h' ? 80 : 50}
                 />
-                <YAxis 
-                  stroke="#64748b" 
+                <YAxis
+                  stroke="#64748b"
                   style={{ fontSize: '12px' }}
                   label={{ value: 'AQI', angle: -90, position: 'insideLeft' }}
                 />

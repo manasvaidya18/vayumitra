@@ -1,20 +1,36 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
-import { mockForecastData } from '../../data/mockData';
+import { fetchForecast } from '../../../api/services';
 
 const ForecastChart = () => {
+  const [forecastData, setForecastData] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchForecast();
+        setForecastData(data);
+      } catch (error) {
+        console.error("Error loading forecast data:", error);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (!forecastData.length) return <Card>Loading forecast chart...</Card>;
+
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">📈 7-Day Forecast Chart</h2>
-      
+
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={mockForecastData}>
+          <AreaChart data={forecastData}>
             <defs>
               <linearGradient id="colorAqi" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />

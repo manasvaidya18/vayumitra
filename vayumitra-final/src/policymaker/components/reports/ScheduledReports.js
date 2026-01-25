@@ -1,15 +1,31 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
-import { mockScheduledReports } from '../../data/mockData';
+import { fetchScheduledReports } from '../../../api/services';
 
 const ScheduledReports = () => {
+  const [scheduledReports, setScheduledReports] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchScheduledReports();
+        setScheduledReports(data);
+      } catch (error) {
+        console.error("Error loading scheduled reports:", error);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (!scheduledReports.length) return <Card>Loading scheduled reports...</Card>;
+
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">📅 Scheduled Reports</h2>
-      
+
       <div className="space-y-3">
-        {mockScheduledReports.map((report, index) => (
+        {scheduledReports.map((report, index) => (
           <div
             key={index}
             className="p-3 bg-slate-50 rounded-lg border border-slate-200 hover:bg-indigo-50 transition-colors"

@@ -1,9 +1,23 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
-import { mockZoneHealthImpact } from '../../data/mockData';
+import { fetchZoneHealth } from '../../../api/services';
 
 const ZoneWiseImpact = () => {
+  const [zoneData, setZoneData] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchZoneHealth();
+        setZoneData(data);
+      } catch (error) {
+        console.error("Error loading zone health impact:", error);
+      }
+    };
+    loadData();
+  }, []);
+
   const getRiskColor = (risk) => {
     const colors = {
       SEVERE: 'bg-red-100 text-red-700',
@@ -14,10 +28,12 @@ const ZoneWiseImpact = () => {
     return colors[risk] || colors.MEDIUM;
   };
 
+  if (!zoneData.length) return <Card>Loading zone impact...</Card>;
+
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">🗺️ Zone-Wise Impact</h2>
-      
+
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -29,7 +45,7 @@ const ZoneWiseImpact = () => {
             </tr>
           </thead>
           <tbody>
-            {mockZoneHealthImpact.map((zone) => (
+            {zoneData.map((zone) => (
               <tr key={zone.zone} className="border-b border-slate-200 hover:bg-slate-50">
                 <td className="p-3 text-sm font-bold text-slate-800">{zone.zone}</td>
                 <td className="p-3 text-sm text-slate-600">{zone.population.toLocaleString()}</td>

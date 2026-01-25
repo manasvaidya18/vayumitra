@@ -1,14 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
-import { mockSourceAttribution } from '../../data/mockData';
+import { fetchSourceAttribution } from '../../../api/services';
 
 const SourceAttribution = () => {
+  const [attribution, setAttribution] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchSourceAttribution();
+        setAttribution(data);
+      } catch (error) {
+        console.error("Error loading source attribution:", error);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (!attribution.length) return <Card>Loading sources...</Card>;
+
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">📊 Source Attribution</h2>
-      
+
       <div className="space-y-4">
-        {mockSourceAttribution.map((source) => (
+        {attribution.map((source) => (
           <div key={source.source}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">

@@ -1,28 +1,43 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
-import { mockSensors } from '../../data/mockData';
+import { fetchSensors } from '../../../api/services';
 
 const RealTimeMap = () => {
+  const [sensors, setSensors] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchSensors();
+        setSensors(data);
+      } catch (error) {
+        console.error("Error loading sensors for map:", error);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (!sensors.length) return <Card>Loading map data...</Card>;
+
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">📍 Real-Time City Map</h2>
-      
+
       {/* Map Container */}
       <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-8 h-96 border-2 border-indigo-100">
         <div className="grid grid-cols-4 gap-6 h-full">
-          {mockSensors.map((sensor) => (
+          {sensors.map((sensor) => (
             <div
               key={sensor.id}
               className="flex items-center justify-center"
             >
               <div className="text-center">
                 <div
-                  className={`map-marker ${
-                    sensor.aqi > 200 ? 'bg-red-500' :
-                    sensor.aqi > 150 ? 'bg-orange-500' :
-                    sensor.aqi > 100 ? 'bg-yellow-500' :
-                    'bg-green-500'
-                  } hover:scale-110 transition-transform cursor-pointer`}
+                  className={`map-marker ${sensor.aqi > 200 ? 'bg-red-500' :
+                      sensor.aqi > 150 ? 'bg-orange-500' :
+                        sensor.aqi > 100 ? 'bg-yellow-500' :
+                          'bg-green-500'
+                    } hover:scale-110 transition-transform cursor-pointer`}
                   title={`${sensor.location}`}
                 >
                   {sensor.aqi}

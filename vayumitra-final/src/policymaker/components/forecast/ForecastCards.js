@@ -1,7 +1,21 @@
-import React from 'react';
-import { mockForecastData } from '../../data/mockData';
+import React, { useEffect, useState } from 'react';
+import { fetchForecast } from '../../../api/services';
 
 const ForecastCards = () => {
+  const [forecastData, setForecastData] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchForecast();
+        setForecastData(data);
+      } catch (error) {
+        console.error("Error loading forecast cards:", error);
+      }
+    };
+    loadData();
+  }, []);
+
   const getStatusColor = (status) => {
     const colors = {
       good: 'bg-green-500',
@@ -24,9 +38,11 @@ const ForecastCards = () => {
     return emojis[status] || '🟡';
   };
 
+  if (!forecastData.length) return <div className="text-center p-4">Loading forecast...</div>;
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-      {mockForecastData.slice(0, 5).map((forecast, index) => (
+      {forecastData.slice(0, 5).map((forecast, index) => (
         <div
           key={index}
           className="bg-white rounded-xl shadow-card p-4 text-center hover:shadow-card-hover transition-shadow"

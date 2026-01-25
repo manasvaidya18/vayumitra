@@ -1,8 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
-import { mockReports } from '../../data/mockData';
+import { fetchRecentReports } from '../../../api/services';
 
 const RecentReports = () => {
+  const [reports, setReports] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchRecentReports();
+        setReports(data);
+      } catch (error) {
+        console.error("Error loading recent reports:", error);
+      }
+    };
+    loadData();
+  }, []);
+
   const handleDownload = (report) => {
     alert(`Downloading ${report.name}...`);
   };
@@ -16,6 +30,8 @@ const RecentReports = () => {
       alert('Report deleted');
     }
   };
+
+  if (!reports.length) return <Card>Loading reports...</Card>;
 
   return (
     <Card>
@@ -45,7 +61,7 @@ const RecentReports = () => {
             </tr>
           </thead>
           <tbody>
-            {mockReports.map((report) => (
+            {reports.map((report) => (
               <tr key={report.id} className="border-b border-slate-200 hover:bg-slate-50">
                 <td className="p-3 text-sm font-medium text-slate-800">{report.name}</td>
                 <td className="p-3 text-sm text-slate-600">{report.type}</td>

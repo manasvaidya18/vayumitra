@@ -1,14 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
-import { mockSensors } from '../../data/mockData';
+import { fetchSensors } from '../../../api/services';
 import { getAQIEmoji } from '../../utils/helpers';
 
 const SensorDataTable = () => {
+  const [sensors, setSensors] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchSensors();
+        setSensors(data);
+      } catch (error) {
+        console.error("Error loading sensors:", error);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (!sensors.length) return <Card>Loading sensors...</Card>;
+
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">📊 Sensor Data Table</h2>
-      
+
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -20,7 +36,7 @@ const SensorDataTable = () => {
             </tr>
           </thead>
           <tbody>
-            {mockSensors.slice(0, 6).map((sensor) => (
+            {sensors.slice(0, 6).map((sensor) => (
               <tr key={sensor.id} className="border-b border-slate-200 hover:bg-slate-50">
                 <td className="p-3 text-sm font-medium text-slate-800">{sensor.id}</td>
                 <td className="p-3 text-sm text-slate-600">{sensor.zone}</td>

@@ -1,14 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
-import { mockVulnerablePopulations } from '../../data/mockData';
+import { fetchVulnerablePopulations } from '../../../api/services';
 
 const VulnerablePopulations = () => {
+  const [populations, setPopulations] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchVulnerablePopulations();
+        setPopulations(data);
+      } catch (error) {
+        console.error("Error loading vulnerable populations:", error);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (!populations.length) return <Card>Loading population data...</Card>;
+
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">👥 Vulnerable Populations</h2>
-      
+
       <div className="space-y-3">
-        {mockVulnerablePopulations.map((group) => (
+        {populations.map((group) => (
           <div key={group.group} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
             <div className="flex items-center space-x-3">
               <span className="text-2xl">{group.icon}</span>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, AlertTriangle, CheckCircle2, User } from 'lucide-react';
-import { getHealthRiskData } from '../../utils/mockData';
+import { fetchCitizenHealthRisk } from '../../../api/services';
 import Card from '../common/Card';
 import Button from '../common/Button';
 
@@ -19,10 +19,14 @@ const HealthRiskPrediction = () => {
     'Allergies'
   ];
 
-  const handleCalculate = () => {
-    const data = getHealthRiskData(age, conditions);
-    setRiskData(data);
-    setShowResults(true);
+  const handleCalculate = async () => {
+    try {
+      const data = await fetchCitizenHealthRisk(age, conditions);
+      setRiskData(data);
+      setShowResults(true);
+    } catch (error) {
+      console.error("Error calculating health risk", error);
+    }
   };
 
   const toggleCondition = (condition) => {
@@ -78,11 +82,10 @@ const HealthRiskPrediction = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => toggleCondition(condition)}
-                  className={`w-full p-3 rounded-xl border-2 transition-all duration-300 flex items-center justify-between ${
-                    conditions.includes(condition)
+                  className={`w-full p-3 rounded-xl border-2 transition-all duration-300 flex items-center justify-between ${conditions.includes(condition)
                       ? 'bg-gradient-to-r from-indigo-500 to-purple-600 border-transparent text-white shadow-glow'
                       : 'bg-white/60 border-slate-200 text-slate-700 hover:border-indigo-300'
-                  }`}
+                    }`}
                 >
                   <span className="font-medium">{condition}</span>
                   {conditions.includes(condition) && <CheckCircle2 className="w-5 h-5" />}
@@ -146,7 +149,7 @@ const HealthRiskPrediction = () => {
                 </div>
 
                 <div className="mt-4 inline-flex items-center px-4 py-2 rounded-full text-white font-semibold text-sm"
-                     style={{ backgroundColor: riskData.color }}>
+                  style={{ backgroundColor: riskData.color }}>
                   <AlertTriangle className="w-4 h-4 mr-2" />
                   {riskData.level} Risk
                 </div>

@@ -1,7 +1,7 @@
 // Mock API functions and data
 
 export const getAQIData = () => ({
-  aqi: 87,
+  aqi: 98,
   level: 'Moderate',
   color: '#f59e0b',
   location: 'Pimpri, Maharashtra',
@@ -40,7 +40,7 @@ export const getHealthRiskData = (age, conditions) => {
   const baseRisk = age > 60 ? 65 : age > 40 ? 45 : 25;
   const conditionRisk = conditions.length * 15;
   const totalRisk = Math.min(baseRisk + conditionRisk, 95);
-  
+
   return {
     risk: totalRisk,
     level: totalRisk > 70 ? 'High' : totalRisk > 40 ? 'Moderate' : 'Low',
@@ -55,7 +55,7 @@ export const getHealthRiskData = (age, conditions) => {
 };
 
 export const getBestTimeData = () => [
-  { hour: '6 AM', aqi: 58, weather: 'Clear', safe: true },
+  { hour: '6 AM', aqi: 200, weather: 'Clear', safe: true },
   { hour: '7 AM', aqi: 72, weather: 'Clear', safe: true },
   { hour: '8 AM', aqi: 95, weather: 'Cloudy', safe: false },
   { hour: '9 AM', aqi: 108, weather: 'Cloudy', safe: false },

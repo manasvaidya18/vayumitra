@@ -1,12 +1,26 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bird, Bug, AlertCircle, TrendingDown, TrendingUp, Heart } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { getWildlifeData } from '../../utils/mockData';
+import { fetchCitizenWildlife } from '../../../api/services';
 import Card from '../common/Card';
 
 const WildlifeImpact = () => {
-  const data = getWildlifeData();
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const result = await fetchCitizenWildlife();
+        setData(result);
+      } catch (error) {
+        console.error("Error loading wildlife data:", error);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (!data) return <Card>Loading wildlife impact...</Card>;
 
   const iconMap = {
     Bird: Bird,

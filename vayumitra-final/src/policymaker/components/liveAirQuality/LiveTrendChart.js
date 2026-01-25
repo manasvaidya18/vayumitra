@@ -1,13 +1,29 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { mockHistoricalData } from '../../data/mockData';
+import { fetchHistory } from '../../../api/services';
 
 const LiveTrendChart = () => {
+  const [historyData, setHistoryData] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchHistory();
+        setHistoryData(data);
+      } catch (error) {
+        console.error("Error loading historical data:", error);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (!historyData.length) return <Card>Loading trends...</Card>;
+
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">📈 Live Trend (Last 24 Hours)</h2>
-      
+
       <div className="mb-4">
         <select className="px-3 py-2 border border-slate-300 rounded-lg text-sm">
           <option>PM2.5</option>
@@ -20,7 +36,7 @@ const LiveTrendChart = () => {
 
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={mockHistoricalData}>
+          <LineChart data={historyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis dataKey="day" stroke="#64748b" />
             <YAxis stroke="#64748b" />
