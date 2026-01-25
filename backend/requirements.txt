@@ -3,3 +3,8 @@ uvicorn
 httpx
 python-dotenv
 pydantic
+xgboost
+pandas
+scikit-learn
+joblib
+numpy

@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { MapPin, Clock, TrendingUp, AlertCircle, Calendar, Sun, CloudRain } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { getAQILevel, getGradientForAQI } from '../../utils/helpers';
-import { fetchCitizenAQI } from '../../../api/services';
+
+import { fetchCitizenAQI, fetchMLForecast } from '../../../api/services';
 import Card from '../common/Card';
 
 const AQIPanel = () => {
@@ -13,14 +14,25 @@ const AQIPanel = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const aqiData = await fetchCitizenAQI();
+        const [aqiData, forecastList] = await Promise.all([
+          fetchCitizenAQI(),
+          fetchMLForecast().catch(err => {
+            console.error("ML Forecast fetch failed", err);
+            return null;
+          })
+        ]);
 
-        // Generate prediction data
-        const predictions = {
-          hourly24: generate24HourPrediction(aqiData.aqi),
-          daily3: generate3DayPrediction(aqiData.aqi),
-          daily7: generate7DayPrediction(aqiData.aqi)
-        };
+        let predictions;
+        if (forecastList && Array.isArray(forecastList) && forecastList.length > 0) {
+          predictions = processForecastData(forecastList, aqiData.aqi);
+        } else {
+          // Fallback to mock generation
+          predictions = {
+            hourly24: generate24HourPrediction(aqiData.aqi),
+            daily3: generate3DayPrediction(aqiData.aqi),
+            daily7: generate7DayPrediction(aqiData.aqi)
+          };
+        }
 
         const cityAQIData = {
           ...aqiData,
@@ -35,6 +47,100 @@ const AQIPanel = () => {
     };
     loadData();
   }, []);
+
+  const processForecastData = (forecastList, currentAQI) => {
+    // 1. Hourly 24h
+    const hourly24 = forecastList.slice(0, 24).map(item => {
+      const d = new Date(item.datetime);
+      const hourStr = d.getHours();
+      const displayHour = hourStr === 0 ? '12 AM' : hourStr < 12 ? `${hourStr} AM` : hourStr === 12 ? '12 PM' : `${hourStr - 12} PM`;
+      return {
+        time: displayHour,
+        aqi: Math.round(item.predicted_aqi),
+        hour: hourStr
+      };
+    });
+
+    // 2. Daily 3 Days (Sample every 6 hours approx or group)
+    // The original mock had 4 slots per day: Morning, Afternoon, Evening, Night
+    // We can map hours to these slots for the next 3 days
+    const daily3 = [];
+    const slots = {
+      'Morning': [6, 7, 8, 9, 10, 11],
+      'Afternoon': [12, 13, 14, 15, 16],
+      'Evening': [17, 18, 19, 20, 21],
+      'Night': [22, 23, 0, 1, 2, 3, 4, 5]
+    };
+
+    const daysProcessed = new Set();
+    let dayCount = 0;
+
+    // Group by date
+    const byDate = {};
+    forecastList.forEach(item => {
+      const d = new Date(item.datetime);
+      const dateKey = d.toDateString();
+      if (!byDate[dateKey]) byDate[dateKey] = [];
+      byDate[dateKey].push(item);
+    });
+
+    Object.keys(byDate).slice(0, 3).forEach((dateKey, idx) => {
+      const items = byDate[dateKey];
+      const dayName = idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : 'Day 3';
+
+      ['Morning', 'Afternoon', 'Evening', 'Night'].forEach(slot => {
+        // Find items in this slot
+        const slotItems = items.filter(i => {
+          const h = new Date(i.datetime).getHours();
+          return slots[slot].includes(h);
+        });
+
+        if (slotItems.length > 0) {
+          const avgAQI = slotItems.reduce((acc, curr) => acc + curr.predicted_aqi, 0) / slotItems.length;
+          daily3.push({
+            time: `${dayName} ${slot}`,
+            day: dayName,
+            slot: slot,
+            aqi: Math.round(avgAQI)
+          });
+        }
+      });
+    });
+
+    // 3. Daily 7 Days (We only have 3 days from ML, we will extrapolate or mock the rest)
+    const daily7 = [];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      const dateKey = d.toDateString();
+      const dayName = dayNames[d.getDay()];
+      const dateStr = `${d.getMonth() + 1}/${d.getDate()}`;
+
+      let dayAQI = currentAQI; // Default
+
+      if (byDate[dateKey]) {
+        // Use average of that day
+        const dayItems = byDate[dateKey];
+        dayAQI = dayItems.reduce((acc, curr) => acc + curr.predicted_aqi, 0) / dayItems.length;
+      } else {
+        // Extrapolate/Mock for days 4-7 based on last known or random variation
+        // Just use a simple random var around current for now to keep it safe
+        dayAQI = currentAQI * (0.8 + Math.random() * 0.4);
+      }
+
+      daily7.push({
+        day: i === 0 ? 'Today' : dayName,
+        date: dateStr,
+        aqi: Math.round(dayAQI),
+        temp: Math.round(28 + Math.random() * 6),
+        condition: i % 3 === 0 ? 'Clear' : i % 3 === 1 ? 'Cloudy' : 'Rainy'
+      });
+    }
+
+    return { hourly24, daily3, daily7 };
+  };
 
   // Generate 24-hour prediction (hourly)
   const generate24HourPrediction = (baseAQI) => {
