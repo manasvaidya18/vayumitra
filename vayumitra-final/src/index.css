@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/40 backdrop-blur-xl border border-white/50 shadow-xl rounded-2xl;
+  }
+
+  .glass-card-dark {
+    @apply bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 shadow-xl rounded-2xl;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-glow transition-all duration-300 hover:scale-105;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-white/60 backdrop-blur-sm border border-indigo-200 text-indigo-700 font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105;
+  }
+
+  .metric-card {
+    @apply glass-card p-6 hover:shadow-glow-lg transition-all duration-300 hover:-translate-y-1;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent;
+  }
+
+  .gradient-border {
+    @apply border-2 border-transparent bg-clip-padding;
+    background-image: linear-gradient(white, white), linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+  }
+}
+
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .text-shadow-lg {
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(226, 232, 240, 0.3);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.App {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #dbeafe, #e9d5ff, #e0e7ff);
+}
+
+/* Animation classes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* AQI Status Colors */
+.aqi-good {
+  background-color: #10b981;
+  color: white;
+}
+
+.aqi-moderate {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.aqi-unhealthy {
+  background-color: #f97316;
+  color: white;
+}
+
+.aqi-very-unhealthy {
+  background-color: #ef4444;
+  color: white;
+}
+
+.aqi-hazardous {
+  background-color: #7f1d1d;
+  color: white;
+}
+
+/* Map markers */
+.map-marker {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Chart container */
+.chart-container {
+  width: 100%;
+  height: 300px;
+}
