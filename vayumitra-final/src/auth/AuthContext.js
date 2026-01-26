@@ -3,14 +3,22 @@ import { createContext, useContext, useState } from "react";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-const [user, setUser] = useState({ role: "citizen" });
-  // user = { role: "citizen" | "policymaker" }
+  const [user, setUser] = useState(() => {
+    // Restore user from localStorage if available
+    const savedToken = localStorage.getItem("token");
+    const savedRole = localStorage.getItem("role");
+    return savedToken ? { role: savedRole, token: savedToken } : null;
+  });
 
-  const login = (role) => {
-    setUser({ role });
+  const login = (role, token) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("role", role);
+    setUser({ role, token });
   };
 
   const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
     setUser(null);
   };
 

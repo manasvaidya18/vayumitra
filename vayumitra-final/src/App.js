@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { Navigate } from "react-router-dom";
-import AuthPage from "./auth/pages/AuthPage";
+import LoginPage from "./auth/pages/LoginPage";
+import SignupPage from "./auth/pages/SignupPage";
 import ProtectedRoute from "./auth/ProtectedRoute";
 
 // Citizen
@@ -35,7 +36,10 @@ const App = () => {
     <Routes>
 
       {/* AUTH */}
-      <Route path="/auth" element={<AuthPage />} />
+      {/* AUTH */}
+      <Route path="/auth" element={<Navigate to="/login" replace />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
       <Route path="/unauthorized" element={<h2>Unauthorized</h2>} />
 
       {/* CITIZEN */}
@@ -81,7 +85,7 @@ const App = () => {
         <Route path="reports-exports" element={<ReportsExports />} />
       </Route>
 
-      <Route path="/" element={<Navigate to="/auth" replace />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
 
     </Routes>
   );

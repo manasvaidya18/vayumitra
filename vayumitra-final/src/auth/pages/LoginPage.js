@@ -1,16 +1,16 @@
-import AuthForm from "../components/AuthForm";
+import LoginForm from "../components/LoginForm";
 
-const AuthPage = () => {
+const LoginPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-[350px]">
+      <div className="bg-white p-8 rounded-xl shadow-lg w-[360px]">
         <h2 className="text-2xl font-bold text-center mb-6">
           VayuMitra Login
         </h2>
-        <AuthForm />
+        <LoginForm />
       </div>
     </div>
   );
 };
 
-export default AuthPage;
+export default LoginPage;

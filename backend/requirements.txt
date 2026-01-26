@@ -8,3 +8,7 @@ pandas
 scikit-learn
 joblib
 numpy
+sqlalchemy
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart

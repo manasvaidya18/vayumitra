@@ -11,7 +11,15 @@ from pathlib import Path
 env_path = Path(__file__).parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
+from database import engine
+import models
+from routes import auth
+
+models.Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
+
+
 
 # Nugen API configuration
 # Using the Agent endpoint as verified in testing. 
@@ -22,19 +30,20 @@ API_KEY = os.getenv("OPENAI_API_KEY") or os.getenv("NUGEN_API_KEY")
 
 # CORS configuration
 origins = [
-    "http://localhost:3000",  # React default port
-    "http://localhost:5173",  # Vite default port
+    "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "http://127.0.0.1:5173",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex="https?://.*", # Allow all http/https origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(auth.router)
 
 class ChatRequest(BaseModel):
     message: str
