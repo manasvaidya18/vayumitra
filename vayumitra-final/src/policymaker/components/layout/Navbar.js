@@ -1,5 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import ProfileDropdown from "./ProfileDropdown";
+
 
 const Navbar = ({ toggleSidebar }) => {
   const navigate = useNavigate();
@@ -7,7 +9,7 @@ const Navbar = ({ toggleSidebar }) => {
   const handleLogout = () => {
     // Add logout logic here
     if (window.confirm('Are you sure you want to logout?')) {
-            window.location.href = "http://localhost:3000";
+      window.location.href = "http://localhost:3000";
 
       // Additional logout logic (clear auth tokens, etc.)
     }
@@ -37,7 +39,7 @@ const Navbar = ({ toggleSidebar }) => {
                 />
               </svg>
             </button>
-            
+
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
                 <span className="text-white text-xl font-bold">🏛️</span>
@@ -70,36 +72,7 @@ const Navbar = ({ toggleSidebar }) => {
             </button>
 
             {/* User Profile */}
-            <div className="flex items-center space-x-3">
-              <div className="text-right">
-                <p className="text-sm font-semibold text-slate-700">Admin User</p>
-                <p className="text-xs text-slate-500">Government Official</p>
-              </div>
-              <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                <span className="text-indigo-600 font-semibold">AU</span>
-              </div>
-            </div>
-
-            {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="flex items-center space-x-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                />
-              </svg>
-              <span className="font-medium">Logout</span>
-            </button>
+            <ProfileDropdown />
           </div>
         </div>
       </div>

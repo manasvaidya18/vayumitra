@@ -6,10 +6,16 @@ import Card from '../common/Card';
 import Button from '../common/Button';
 
 const HealthRiskPrediction = () => {
-  const [age, setAge] = useState(35);
+  const [ageGroup, setAgeGroup] = useState('30-40');
   const [conditions, setConditions] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [riskData, setRiskData] = useState(null);
+
+  const ageGroups = [
+    "0-10", "11-20", "20-30", "30-40",
+    "40-50", "50-60", "60-70", "70+",
+    "80+", "90-100", "100+"
+  ];
 
   const healthConditions = [
     'Asthma',
@@ -21,7 +27,7 @@ const HealthRiskPrediction = () => {
 
   const handleCalculate = async () => {
     try {
-      const data = await fetchCitizenHealthRisk(age, conditions);
+      const data = await fetchCitizenHealthRisk(ageGroup, conditions);
       setRiskData(data);
       setShowResults(true);
     } catch (error) {
@@ -47,26 +53,27 @@ const HealthRiskPrediction = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Input Form */}
         <div className="space-y-6">
-          {/* Age Input */}
+          {/* Age Group Selection */}
           <div>
             <label className="flex items-center text-sm font-semibold text-slate-700 mb-3">
               <User className="w-4 h-4 mr-2" />
-              Your Age: <span className="ml-2 text-indigo-600">{age} years</span>
+              Your Age Group
             </label>
-            <input
-              type="range"
-              min="1"
-              max="100"
-              value={age}
-              onChange={(e) => setAge(Number(e.target.value))}
-              className="w-full h-2 bg-gradient-to-r from-indigo-200 to-purple-200 rounded-lg appearance-none cursor-pointer slider"
-              style={{
-                background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${age}%, #e0e7ff ${age}%, #e0e7ff 100%)`
-              }}
-            />
-            <div className="flex justify-between text-xs text-slate-500 mt-1">
-              <span>1</span>
-              <span>100</span>
+            <div className="relative">
+              <select
+                value={ageGroup}
+                onChange={(e) => setAgeGroup(e.target.value)}
+                className="w-full p-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow appearance-none cursor-pointer"
+              >
+                {ageGroups.map((group) => (
+                  <option key={group} value={group}>
+                    {group}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-slate-500">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
             </div>
           </div>
 
@@ -83,8 +90,8 @@ const HealthRiskPrediction = () => {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => toggleCondition(condition)}
                   className={`w-full p-3 rounded-xl border-2 transition-all duration-300 flex items-center justify-between ${conditions.includes(condition)
-                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 border-transparent text-white shadow-glow'
-                      : 'bg-white/60 border-slate-200 text-slate-700 hover:border-indigo-300'
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 border-transparent text-white shadow-glow'
+                    : 'bg-white/60 border-slate-200 text-slate-700 hover:border-indigo-300'
                     }`}
                 >
                   <span className="font-medium">{condition}</span>
@@ -94,7 +101,10 @@ const HealthRiskPrediction = () => {
             </div>
           </div>
 
-          <Button onClick={handleCalculate} className="w-full">
+          <Button
+            onClick={handleCalculate}
+            className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white shadow-lg shadow-teal-500/30 border-none"
+          >
             Calculate Risk
           </Button>
         </div>

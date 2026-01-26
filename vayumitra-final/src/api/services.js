@@ -148,11 +148,11 @@ export const fetchCitizenTreeImpact = async () => {
     return res.json();
 };
 
-export const fetchCitizenHealthRisk = async (age, conditions) => {
+export const fetchCitizenHealthRisk = async (ageGroup, conditions) => {
     const res = await fetch(`${BASE_URL}/api/citizen/health-risk-calc`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ age, conditions })
+        body: JSON.stringify({ age_group: ageGroup, conditions })
     });
     if (!res.ok) throw new Error('Failed to fetch health risk');
     return res.json();

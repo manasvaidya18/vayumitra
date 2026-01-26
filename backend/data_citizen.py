@@ -38,21 +38,93 @@ def getCleanAirScore():
         ]
     }
 
-def getHealthRiskData(age=30, conditions=[]):
-    baseRisk = 65 if age > 60 else (45 if age > 40 else 25)
-    conditionRisk = len(conditions) * 15
-    totalRisk = min(baseRisk + conditionRisk, 95)
+def getHealthRiskData(age_group="30-40", conditions=[]):
+    # 1. Get Current AQI (using internal function)
+    current_aqi_data = getAQIData()
+    aqi = current_aqi_data['aqi']
     
+    # 2. Base Risk from AQI
+    aqi_risk = 0
+    if aqi > 300: aqi_risk = 80
+    elif aqi > 200: aqi_risk = 60
+    elif aqi > 100: aqi_risk = 40
+    else: aqi_risk = 10
+
+    # 3. Age Group Factor
+    age_risk = 0
+    # Higher risk for children and elderly
+    if age_group in ["0-10", "70+", "80+", "90-100", "100+"]:
+        age_risk = 30
+    elif age_group in ["10-20", "60-70"]:
+        age_risk = 20
+    else:
+        age_risk = 5
+
+    # 4. Conditions Factor
+    condition_risk = 0
+    respiratory_issues = ['Asthma', 'COPD', 'Lung Cancer', 'Bronchitis']
+    cardio_issues = ['Heart Disease', 'Hypertension']
+    
+    has_respiratory = any(c in respiratory_issues for c in conditions)
+    has_cardio = any(c in cardio_issues for c in conditions)
+
+    if has_respiratory:
+        condition_risk += 40
+    if has_cardio:
+        condition_risk += 30
+    
+    # Add minor risk for other conditions
+    other_conditions = [c for c in conditions if c not in respiratory_issues and c not in cardio_issues]
+    condition_risk += len(other_conditions) * 10
+
+    # 5. Calculate Total Risk
+    # Formula: AQI contributes 40%, Medical 40%, Age 20% ? 
+    # Or just additive with a cap
+    
+    total_risk = base_risk_calc = aqi_risk + age_risk + condition_risk
+    
+    # Amplifiers
+    if aqi > 150 and (has_respiratory or has_cardio):
+        total_risk += 20 # Sinergy effect
+        
+    total_risk = min(total_risk, 99) # Cap at 99%
+    total_risk = max(total_risk, 1)  # Min 1%
+
+    # 6. Generate Recommendations
+    recommendations = []
+    
+    # General AQI Recs
+    if aqi > 200:
+        recommendations.append("Air quality is Poor. Stay indoors as much as possible.")
+        recommendations.append("Use an air purifier with HEPA filters.")
+    elif aqi > 100:
+        recommendations.append("Limit prolonged outdoor exertion.")
+    
+    # Condition Specific Recs combined with AQI
+    if has_respiratory:
+        recommendations.append(f"Since you have respiratory conditions, keep inhalers handy.")
+        if aqi > 100:
+            recommendations.append("Wear an N95 mask strictly if stepping out.")
+    
+    if has_cardio and aqi > 150:
+         recommendations.append("Avoid strenuous exercise which puts stress on the heart.")
+
+    # Age Specific Recs
+    if age_group in ["0-10"]:
+        if aqi > 150: recommendations.append("Children should avoid outdoor play.")
+    elif age_group in ["60-70", "70+", "80+", "90-100", "100+"]:
+        recommendations.append("Elderly should maintain regular health checkups during high pollution days.")
+
+    # Default fallback
+    if len(recommendations) == 0:
+        recommendations.append("Air quality is good. Enjoy outdoor activities!")
+        recommendations.append("Ventilate your home to let fresh air in.")
+
     return {
-        "risk": totalRisk,
-        "level": 'High' if totalRisk > 70 else ('Moderate' if totalRisk > 40 else 'Low'),
-        "color": '#ef4444' if totalRisk > 70 else ('#f59e0b' if totalRisk > 40 else '#22c55e'),
-        "recommendations": [
-            'Avoid outdoor activities during peak hours' if totalRisk > 70 else 'Moderate outdoor activities recommended',
-            'Wear N95 mask when outdoors',
-            'Keep windows closed during high pollution',
-            'Use air purifier indoors'
-        ]
+        "risk": total_risk,
+        "level": 'High' if total_risk > 70 else ('Moderate' if total_risk > 35 else 'Low'),
+        "color": '#ef4444' if total_risk > 70 else ('#f59e0b' if total_risk > 35 else '#22c55e'),
+        "recommendations": recommendations[:4] # Return top 4
     }
 
 def getBestTimeData():

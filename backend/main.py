@@ -268,12 +268,12 @@ async def get_citizen_health_risk(age: int = 30, conditions: list = []):
     return getHealthRiskData(age, conditions)
 
 class HealthRiskRequest(BaseModel):
-    age: int
+    age_group: str
     conditions: list[str]
 
 @app.post("/api/citizen/health-risk-calc")
 async def calculate_health_risk(request: HealthRiskRequest):
-     return getHealthRiskData(request.age, request.conditions)
+     return getHealthRiskData(request.age_group, request.conditions)
 
 @app.get("/api/citizen/best-time")
 async def get_citizen_best_time():
