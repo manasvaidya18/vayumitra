@@ -70,9 +70,14 @@ def fetch_and_merge_live_data(historical_df):
     # Since this is a module, we assume env is loaded or we check os.environ
     owm_key = os.getenv("OPENWEATHERMAP_API_KEY")
     openaq_key = os.getenv("OPENAQ_API_KEY")
+    cpcb_key = os.getenv("CPCB_API_KEY")
     
     # Initialize client
-    client = MultiSourceAPIClient(openweathermap_key=owm_key, openaq_key=openaq_key)
+    client = MultiSourceAPIClient(
+        openweathermap_key=owm_key, 
+        openaq_key=openaq_key,
+        cpcb_key=cpcb_key
+    )
     
     # Fetch last 48 hours for context
     live_df = client.fetch_realtime_data(city='Delhi', hours=48)

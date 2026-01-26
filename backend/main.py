@@ -13,7 +13,7 @@ load_dotenv(dotenv_path=env_path)
 
 from database import engine
 import models
-from routes import auth
+from routes import auth, heatmap
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -44,6 +44,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(heatmap.router)
 
 class ChatRequest(BaseModel):
     message: str

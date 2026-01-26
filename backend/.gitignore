@@ -1,0 +1,16 @@
+# Environment Variables
+.env
+
+# Byte-compiled / Optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary Debug Files
+debug_*.py
+test_*.py
+heatmap_response.json
+
+# IDE settings
+.vscode/
+.idea/

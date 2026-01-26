@@ -123,7 +123,21 @@ def compute_aqi_for_dataframe(df, inplace=False):
     print("Computing CPCB-compliant AQI...")
     
     # Calculate AQI for each row
-    df['AQI_computed'] = df.apply(calculate_aqi, axis=1)
+    
+    # If AQI_computed already exists (e.g. from CPCB API), compute only for missing
+    if 'AQI_computed' not in df.columns:
+        df['AQI_computed'] = np.nan
+        
+    # Calculate AQI only where it's missing or 0
+    mask_missing = (df['AQI_computed'].isna()) | (df['AQI_computed'] == 0)
+    
+    if mask_missing.any():
+        # Only apply calculation on missing rows
+        computed_vals = df.loc[mask_missing].apply(calculate_aqi, axis=1)
+        df.loc[mask_missing, 'AQI_computed'] = computed_vals
+    
+    # Fill remaining NaNs with 0 if any
+    df['AQI_computed'] = df['AQI_computed'].fillna(0)
     
     # Get category and color
     aqi_info = df['AQI_computed'].apply(get_aqi_category)
