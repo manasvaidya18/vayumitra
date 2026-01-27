@@ -62,9 +62,9 @@ class MultiSourceAPIClient:
     }
     
     def __init__(self, openweathermap_key=None, openaq_key=None, cpcb_key=None):
-        self.owm_key = openweathermap_key
-        self.openaq_key = openaq_key
-        self.cpcb_key = cpcb_key
+        self.owm_key = openweathermap_key or os.getenv("OPENWEATHERMAP_API_KEY")
+        self.openaq_key = openaq_key or os.getenv("OPENAQ_API_KEY")
+        self.cpcb_key = cpcb_key or os.getenv("CPCB_API_KEY")
     
     def fetch_realtime_data(self, city='Delhi', hours=24):
         """
@@ -88,7 +88,7 @@ class MultiSourceAPIClient:
             df = self._fetch_openweathermap(city, hours)
             if df is not None and len(df) > 0:
                 return df
-        
+    
         # Fall back to simulated data
         print('[INFO] Using simulated data (no API keys or APIs unavailable)')
         return self._generate_simulated_data(city, hours)
@@ -277,6 +277,16 @@ class MultiSourceAPIClient:
                 dt = datetime.fromtimestamp(item['dt'])
                 components = item['components']
                 
+                # Simple AQI approx from PM2.5 for OWM data
+                pm25 = components.get('pm2_5', 0)
+                aqi_approx = 0
+                if pm25 <= 30: aqi_approx = pm25 * (50/30)
+                elif pm25 <= 60: aqi_approx = 50 + (pm25-30)*(50/30)
+                elif pm25 <= 90: aqi_approx = 100 + (pm25-60)*(100/30)
+                elif pm25 <= 120: aqi_approx = 200 + (pm25-90)*(100/30)
+                elif pm25 <= 250: aqi_approx = 300 + (pm25-120)*(100/130)
+                else: aqi_approx = 400 + (pm25-250)*(100/130)
+                
                 record = {
                     'Datetime': dt,
                     'PM2_5_ugm3': components.get('pm2_5', np.nan),
@@ -285,9 +295,10 @@ class MultiSourceAPIClient:
                     'CO_ugm3': components.get('co', np.nan),
                     'O3_ugm3': components.get('o3', np.nan),
                     'SO2_ugm3': components.get('so2', np.nan),
-                    'Temp_2m_C': 25.0,  # OWM doesn't provide temp in this API
+                    'Temp_2m_C': 25.0,  
                     'Humidity_Percent': 60,
-                    'Wind_Speed_10m_kmh': 10.0
+                    'Wind_Speed_10m_kmh': 10.0,
+                    'AQI_computed': int(aqi_approx) # Critical for main.py
                 }
                 records.append(record)
             

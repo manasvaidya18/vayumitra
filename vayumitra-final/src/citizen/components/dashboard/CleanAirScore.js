@@ -3,39 +3,22 @@ import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Sparkles } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Card from '../common/Card';
+import { fetchCitizenScore } from '../../../api/services';
 
 const CleanAirScore = () => {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    const cityData = localStorage.getItem('selectedCity');
-    if (cityData) {
-      const city = JSON.parse(cityData);
-      
-      // Calculate clean air score based on AQI (inverse relationship)
-      const score = Math.round(100 - (city.aqi / 2));
-      const trend = city.trend === 'down' ? 'up' : 'down'; // Inverse for clean air score
-      const change = Math.round(Math.random() * 10 + 3);
-      
-      // Generate historical data based on current score
-      const historicalData = [
-        { date: 'Mon', score: score - 5 },
-        { date: 'Tue', score: score - 3 },
-        { date: 'Wed', score: score - 4 },
-        { date: 'Thu', score: score - 1 },
-        { date: 'Fri', score: score - 3 },
-        { date: 'Sat', score: score + 2 },
-        { date: 'Sun', score: score },
-      ];
+    const loadScore = async () => {
+      try {
+        const result = await fetchCitizenScore();
+        setData(result);
+      } catch (err) {
+        console.error("Failed to load clean air score:", err);
+      }
+    };
 
-      const insights = [
-        `Air quality ${trend === 'up' ? 'improved' : 'declined'} by ${change}% this week`,
-        `Peak pollution hours: ${city.aqi > 100 ? '7-10 AM & 6-9 PM' : '8-10 AM'}`,
-        `${city.name} shows ${score > 70 ? 'good' : 'moderate'} air quality patterns`
-      ];
-
-      setData({ score, trend, change, historicalData, insights });
-    }
+    loadScore();
   }, []);
 
   if (!data) {
@@ -48,6 +31,17 @@ const CleanAirScore = () => {
     );
   }
 
+  if (data.error || !data.insights) {
+    return (
+      <Card>
+        <div className="flex flex-col items-center justify-center h-64 text-red-500">
+          <p className="font-semibold">Unable to load score status</p>
+          <p className="text-sm text-slate-400 mt-2">{data.error || "Invalid response from server"}</p>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <div className="flex items-center justify-between mb-6">
@@ -55,9 +49,8 @@ const CleanAirScore = () => {
           <Sparkles className="w-6 h-6 mr-2 text-indigo-600" />
           Clean Air Score
         </h2>
-        <div className={`flex items-center space-x-2 px-4 py-2 rounded-full ${
-          data.trend === 'up' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-        }`}>
+        <div className={`flex items-center space-x-2 px-4 py-2 rounded-full ${data.trend === 'up' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+          }`}>
           {data.trend === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
           <span className="text-sm font-semibold">{data.change}% this week</span>
         </div>

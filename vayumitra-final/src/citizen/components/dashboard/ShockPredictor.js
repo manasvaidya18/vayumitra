@@ -3,65 +3,23 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, Bell, TrendingUp, Info } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import Card from '../common/Card';
+import { fetchCitizenShockPredictor } from '../../../api/services';
 
 const ShockPredictor = () => {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    const cityData = localStorage.getItem('selectedCity');
-    if (cityData) {
-      const city = JSON.parse(cityData);
-      const baseAQI = city.aqi;
-      
-      // Generate prediction data
-      const predictionData = [
-        { time: 'Now', aqi: baseAQI, predicted: false },
-        { time: '+2h', aqi: Math.round(baseAQI * 1.09), predicted: true },
-        { time: '+4h', aqi: Math.round(baseAQI * 1.17), predicted: true },
-        { time: '+6h', aqi: Math.round(baseAQI * 1.44), predicted: true },
-        { time: '+8h', aqi: Math.round(baseAQI * 1.70), predicted: true },
-        { time: '+10h', aqi: Math.round(baseAQI * 1.59), predicted: true },
-        { time: '+12h', aqi: Math.round(baseAQI * 1.32), predicted: true },
-      ];
-
-      // Generate alerts based on AQI
-      const alerts = [];
-      
-      if (baseAQI > 100) {
-        alerts.push({
-          id: 1,
-          type: 'warning',
-          title: 'High Pollution Alert',
-          time: 'Current',
-          severity: 'High',
-          message: `${city.name} currently experiencing unhealthy air quality levels`
-        });
+    const loadData = async () => {
+      try {
+        const result = await fetchCitizenShockPredictor();
+        if (result) {
+          setData(result);
+        }
+      } catch (err) {
+        console.error("Failed to load shock predictor data:", err);
       }
-      
-      if (baseAQI < 150) {
-        alerts.push({
-          id: 2,
-          type: 'warning',
-          title: 'Pollution Spike Expected',
-          time: 'Next 6-8 hours',
-          severity: 'Moderate',
-          message: 'AQI expected to increase during evening traffic hours'
-        });
-      }
-
-      if (alerts.length === 0) {
-        alerts.push({
-          id: 1,
-          type: 'info',
-          title: 'Air Quality Stable',
-          time: 'Next 12 hours',
-          severity: 'Low',
-          message: 'No significant pollution spikes predicted'
-        });
-      }
-
-      setData({ alerts, predictionData });
-    }
+    };
+    loadData();
   }, []);
 
   if (!data) {

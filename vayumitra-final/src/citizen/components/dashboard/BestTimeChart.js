@@ -3,39 +3,27 @@ import { motion } from 'framer-motion';
 import { Clock, Sun, Cloud } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import Card from '../common/Card';
+import { fetchCitizenBestTime } from '../../../api/services';
 
 const BestTimeChart = () => {
   const [data, setData] = useState([]);
   const [safeHours, setSafeHours] = useState([]);
 
   useEffect(() => {
-    const cityData = localStorage.getItem('selectedCity');
-    if (cityData) {
-      const city = JSON.parse(cityData);
-      
-      // Generate hourly data based on city's AQI
-      const baseAQI = city.aqi;
-      const timeData = [
-        { hour: '6 AM', aqi: Math.round(baseAQI * 0.67), weather: 'Clear', safe: true },
-        { hour: '7 AM', aqi: Math.round(baseAQI * 0.83), weather: 'Clear', safe: baseAQI < 120 },
-        { hour: '8 AM', aqi: Math.round(baseAQI * 1.09), weather: 'Cloudy', safe: false },
-        { hour: '9 AM', aqi: Math.round(baseAQI * 1.24), weather: 'Cloudy', safe: false },
-        { hour: '10 AM', aqi: Math.round(baseAQI * 1.32), weather: 'Cloudy', safe: false },
-        { hour: '11 AM', aqi: Math.round(baseAQI * 1.17), weather: 'Partly Cloudy', safe: false },
-        { hour: '12 PM', aqi: Math.round(baseAQI * 1.01), weather: 'Partly Cloudy', safe: baseAQI < 100 },
-        { hour: '1 PM', aqi: Math.round(baseAQI * 0.94), weather: 'Clear', safe: true },
-        { hour: '2 PM', aqi: Math.round(baseAQI * 0.87), weather: 'Clear', safe: true },
-        { hour: '3 PM', aqi: Math.round(baseAQI * 0.90), weather: 'Clear', safe: true },
-        { hour: '4 PM', aqi: Math.round(baseAQI * 0.98), weather: 'Clear', safe: baseAQI < 110 },
-        { hour: '5 PM', aqi: Math.round(baseAQI * 1.06), weather: 'Cloudy', safe: false },
-        { hour: '6 PM', aqi: Math.round(baseAQI * 1.21), weather: 'Cloudy', safe: false },
-        { hour: '7 PM', aqi: Math.round(baseAQI * 1.13), weather: 'Clear', safe: false },
-        { hour: '8 PM', aqi: Math.round(baseAQI * 0.98), weather: 'Clear', safe: baseAQI < 110 },
-      ];
-
-      setData(timeData);
-      setSafeHours(timeData.filter(d => d.safe));
-    }
+    const loadData = async () => {
+      try {
+        const result = await fetchCitizenBestTime();
+        if (result && Array.isArray(result)) {
+          setData(result);
+          // Use 'recommended' if available, otherwise fallback to 'safe'
+          const recommended = result.filter(d => d.recommended !== undefined ? d.recommended : d.safe);
+          setSafeHours(recommended);
+        }
+      } catch (err) {
+        console.error("Failed to load best time data:", err);
+      }
+    };
+    loadData();
   }, []);
 
   if (data.length === 0) {

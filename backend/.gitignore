@@ -6,6 +6,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+sql_app.db
+
 # Temporary Debug Files
 debug_*.py
 test_*.py
