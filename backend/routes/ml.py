@@ -14,38 +14,72 @@ except ImportError as e:
     print(f"ML Module import failed: {e}")
     ML_AVAILABLE = False
 
-# Global ML components - in a real app these should be in dependencies or a state manager
-ml_model = None
-ml_scaler = None
-ml_features = None
+# Global ML components - dictionary to support multiple cities
+ml_components = {
+    'Delhi': {'model': None, 'scaler': None, 'features': None},
+    'Pune': {'model': None, 'scaler': None, 'features': None}
+}
 
 async def init_ml():
-    global ml_model, ml_scaler, ml_features
+    global ml_components
     if ML_AVAILABLE:
         try:
-            print("Loading ML model components...")
-            # Run load_model in thread if it's blocking? It's loading from disk.
-            ml_model, ml_scaler, ml_features = load_model()
-            print("ML model loaded successfully.")
+            print("Loading ML model components for cities...")
+            for city in ['Delhi', 'Pune']:
+                model, scaler, feature_names = load_model(city=city)
+                if model:
+                    ml_components[city] = {
+                        'model': model,
+                        'scaler': scaler,
+                        'features': feature_names
+                    }
+                    print(f"ML components for {city} loaded successfully.")
+                else:
+                    print(f"Failed or skipped loading {city} model (file not found?)")
+                    
         except Exception as e:
-            print(f"Failed to load ML model: {e}")
+            print(f"Failed to load ML models: {e}")
 
 @router.on_event("startup")
 async def startup_event():
     await init_ml()
 
 @router.get("/forecast-3day")
-async def get_ml_forecast():
+async def get_ml_forecast(city: str = 'Delhi'):
     """Get 3-day AQI forecast using the XGBoost model."""
     if not ML_AVAILABLE:
         raise HTTPException(status_code=503, detail="ML module not available (dependencies missing?)")
     
-    if not ml_model:
-        raise HTTPException(status_code=503, detail="ML Model not loaded/initialized")
+    # Normalize city input?
+    target_city = 'Pune' if city.lower() == 'pune' else 'Delhi'
+    
+    components = ml_components.get(target_city)
+    if not components or not components['model']:
+        # Try fallback to Delhi if Pune fails? Or raise Error?
+        # Better to raise error if requested city not available
+        if target_city == 'Pune' and not components['model']:
+             print(f"Pune model not loaded. Fallback to Delhi?? No, return error.")
+             # Actually for hackathon, maybe fallback to Delhi model but tell user?
+             # Let's try to stick to requested city.
+             pass
+    
+    if not components or not components['model']:
+        # Last resort fallback to whatever is loaded
+        # if ml_components['Delhi']['model']:
+        #    components = ml_components['Delhi']
+        # else:
+            raise HTTPException(status_code=503, detail=f"ML Model not loaded/initialized for {target_city}")
+    
+    ml_model = components['model']
+    ml_scaler = components['scaler']
+    ml_features = components['features']
     
     try:
-        # Load data (simulated real-time fetch)
-        df = prepare_historical_data()
+        # Load data for specific city
+        df = prepare_historical_data(city=target_city)
+        
+        if df is None:
+             raise HTTPException(status_code=404, detail=f"Insufficient data for {target_city}")
         
         # Generate forecast
         forecasts = forecast_next_hours(ml_model, ml_scaler, ml_features, df, hours=72)
@@ -53,17 +87,23 @@ async def get_ml_forecast():
         
     except Exception as e:
         print(f"Prediction error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
 @router.get("/history")
-async def get_ml_history(days: int = 7):
+async def get_ml_history(city: str = 'Delhi', days: int = 7):
     """Get historical AQI data for model accuracy comparison."""
     if not ML_AVAILABLE:
         raise HTTPException(status_code=503, detail="ML module not available")
     
+    target_city = 'Pune' if city.lower() == 'pune' else 'Delhi'
+
     try:
         # Load historical data (CSV + Live)
-        df = prepare_historical_data()
+        df = prepare_historical_data(city=target_city)
+        if df is None:
+             raise HTTPException(status_code=404, detail=f"Insufficient data for {target_city}")
         
         # Filter for requested duration
         cutoff_date = pd.Timestamp.now().tz_localize(None) - timedelta(days=days)

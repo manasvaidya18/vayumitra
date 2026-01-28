@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, useMapEvents, Marker, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, useMapEvents, Marker, useMap, Tooltip as LeafletTooltip } from 'react-leaflet';
 import { motion, AnimatePresence } from 'framer-motion';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -40,18 +40,52 @@ const createTreeIcon = (emoji) => {
   });
 };
 
-const InteractiveLeafletMap = ({ city, treeType, plantedTrees, onTreesPlanted }) => {
+const InteractiveLeafletMap = ({ city, treeType, plantedTrees, onTreesPlanted, onTreeRemove }) => {
   const [ripples, setRipples] = useState([]);
   const [newTrees, setNewTrees] = useState([]);
+  const [warning, setWarning] = useState(null);
 
   const treeEmojis = {
     'Banyan': '🌳',
     'Neem': '🌲',
     'Peepal': '🌴',
-    'Mango': '🥭'
+    'Mango': '🥭',
+    'Bamboo': '🎍',
+    'Ashoka': '🎋',
+    'Jamun': '🍒',
+    'Teak': '🪵',
+    'Gulmohar': '🌺'
+  };
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2)
+      ;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const d = R * c; // Distance in km
+    return d;
+  };
+
+  const deg2rad = (deg) => {
+    return deg * (Math.PI / 180);
   };
 
   const handleMapClick = (latlng) => {
+    // Check if within allowed radius of city (e.g., 25km)
+    const allowedRadius = city.radius || 25; // Default 25km
+    const dist = calculateDistance(latlng.lat, latlng.lng, city.coords[0], city.coords[1]);
+
+    if (dist > allowedRadius) {
+      setWarning(`Cannot plant here! Please plant within ${allowedRadius}km of ${city.name.split(',')[0]}.`);
+      setTimeout(() => setWarning(null), 3000);
+      return;
+    }
+
     // Create 5 trees slightly spread around the click point
     const treesToAdd = [];
     const offsets = [
@@ -67,16 +101,17 @@ const InteractiveLeafletMap = ({ city, treeType, plantedTrees, onTreesPlanted })
         id: Date.now() + index,
         position: [latlng.lat + offset[0], latlng.lng + offset[1]],
         type: treeType,
-        emoji: treeEmojis[treeType]
+        emoji: treeEmojis[treeType] || '🌳',
+        location: city.name // Store city to filter later
       });
     });
 
     // Add ripple effect at click position
     const rippleId = Date.now();
-    setRipples(prev => [...prev, { 
-      id: rippleId, 
-      lat: latlng.lat, 
-      lng: latlng.lng 
+    setRipples(prev => [...prev, {
+      id: rippleId,
+      lat: latlng.lat,
+      lng: latlng.lng
     }]);
 
     // Remove ripple after animation
@@ -151,6 +186,20 @@ const InteractiveLeafletMap = ({ city, treeType, plantedTrees, onTreesPlanted })
         `}
       </style>
 
+      {/* Warning Toast */}
+      <AnimatePresence>
+        {warning && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1002] bg-red-500 text-white px-4 py-2 rounded-full shadow-lg font-bold text-sm"
+          >
+            ⚠️ {warning}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Ripple Effects Overlay */}
       <AnimatePresence>
         {ripples.map(ripple => (
@@ -181,7 +230,17 @@ const InteractiveLeafletMap = ({ city, treeType, plantedTrees, onTreesPlanted })
               key={tree.id}
               position={tree.position}
               icon={createTreeIcon(tree.emoji)}
-            />
+              eventHandlers={{
+                click: (e) => {
+                  L.DomEvent.stopPropagation(e);
+                  if (onTreeRemove) onTreeRemove(tree.id);
+                }
+              }}
+            >
+              <LeafletTooltip direction="top" offset={[0, -20]} opacity={1}>
+                Click to remove
+              </LeafletTooltip>
+            </Marker>
           ))}
         </MapContainer>
       </div>
@@ -208,7 +267,11 @@ const InteractiveLeafletMap = ({ city, treeType, plantedTrees, onTreesPlanted })
         </div>
         <div className="flex items-center space-x-2 glass-card px-3 py-2 bg-white/80">
           <div className="w-4 h-4 rounded-full bg-green-500 animate-pulse" />
-          <span className="text-slate-600 font-semibold">Click to Plant (5 trees)</span>
+          <span className="text-slate-600 font-semibold">Click Map to Plant (5 trees)</span>
+        </div>
+        <div className="flex items-center space-x-2 glass-card px-3 py-2 bg-white/80">
+          <span className="text-xl">🗑️</span>
+          <span className="text-slate-600 font-semibold">Click Tree to Remove</span>
         </div>
         <div className="flex items-center space-x-2 glass-card px-3 py-2 bg-white/80">
           <span className="text-slate-600 font-semibold">📍 {city.name}</span>

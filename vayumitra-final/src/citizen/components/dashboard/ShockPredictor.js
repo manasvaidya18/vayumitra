@@ -5,13 +5,14 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import Card from '../common/Card';
 import { fetchCitizenShockPredictor } from '../../../api/services';
 
-const ShockPredictor = () => {
+const ShockPredictor = ({ city }) => {
   const [data, setData] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const result = await fetchCitizenShockPredictor();
+        const cityName = city?.name || 'Delhi';
+        const result = await fetchCitizenShockPredictor(cityName);
         if (result) {
           setData(result);
         }
@@ -20,7 +21,7 @@ const ShockPredictor = () => {
       }
     };
     loadData();
-  }, []);
+  }, [city]);
 
   if (!data) {
     return (

@@ -70,7 +70,7 @@ const Dashboard = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <AQIPanel />
+        <AQIPanel city={selectedCity} />
       </motion.div>
 
       {/* Two Column Grid */}
@@ -80,7 +80,7 @@ const Dashboard = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <CleanAirScore />
+          <CleanAirScore city={selectedCity} />
         </motion.div>
 
         <motion.div
@@ -88,7 +88,7 @@ const Dashboard = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <HealthRiskPrediction />
+          <HealthRiskPrediction city={selectedCity} />
         </motion.div>
       </div>
 
@@ -98,7 +98,7 @@ const Dashboard = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <BestTimeChart />
+        <BestTimeChart city={selectedCity} />
       </motion.div>
 
       {/* Shock Predictor */}
@@ -107,7 +107,7 @@ const Dashboard = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <ShockPredictor />
+        <ShockPredictor city={selectedCity} />
       </motion.div>
     </div>
   );

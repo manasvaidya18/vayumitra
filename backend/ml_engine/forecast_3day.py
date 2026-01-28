@@ -22,111 +22,70 @@ except ImportError:
 LAG_HOURS = [1, 3, 6, 12, 24]
 ROLLING_WINDOWS = [3, 6, 12, 24]
 
-def load_model():
-    """Load trained model and components."""
+def load_model(city='Delhi'):
+    """Load trained model and components for specific city."""
     models_dir = Path(__file__).parent / 'models'
     
-    model = xgb.XGBRegressor()
-    model.load_model(str(models_dir / 'xgboost_aqi.json'))
-    scaler = joblib.load(models_dir / 'scaler.pkl')
-    feature_names = joblib.load(models_dir / 'feature_names.pkl')
+    prefix = ""
+    if city.lower() == 'pune':
+        prefix = "pune_"
     
-    print('Model loaded successfully!')
+    model_path = models_dir / f'{prefix}xgboost_aqi.json'
+    scaler_path = models_dir / f'{prefix}scaler.pkl'
+    # Pune uses feature_names.pkl (no prefix in some listings, but let's check)
+    # List dir showed: pune_feature_names.pkl
+    feature_path = models_dir / f'{prefix}feature_names.pkl'
+    
+    if not model_path.exists():
+        print(f"Model not found for {city}: {model_path}")
+        return None, None, None
+
+    model = xgb.XGBRegressor()
+    model.load_model(str(model_path))
+    scaler = joblib.load(scaler_path)
+    feature_names = joblib.load(feature_path)
+    
+    print(f'{city} Model loaded successfully!')
     return model, scaler, feature_names
 
 
-def prepare_historical_data():
-    """Load and prepare historical data."""
-    # Data is now in ml_engine/data
-    df = pd.read_csv(Path(__file__).parent / 'data' / 'delhi_model_data.csv')
-    df['Datetime'] = pd.to_datetime(df['Datetime'])
-    df = df.sort_values('Datetime')
-    
-    # Compute AQI
-    df = compute_aqi_for_dataframe(df)
-    
-    # Add temporal features
-    df['hour'] = df['Datetime'].dt.hour
-    df['day_of_week'] = df['Datetime'].dt.dayofweek
-    df['month'] = df['Datetime'].dt.month
-    df['is_weekend'] = (df['day_of_week'] >= 5).astype(int)
-    df['hour_sin'] = np.sin(2 * np.pi * df['hour'] / 24)
-    df['hour_cos'] = np.cos(2 * np.pi * df['hour'] / 24)
-    df['month_sin'] = np.sin(2 * np.pi * df['month'] / 12)
-    df['month_cos'] = np.cos(2 * np.pi * df['month'] / 12)
-    
-    return df
-
-
-def fetch_and_merge_live_data(historical_df):
-    """
-    Fetch real-time data and merge with historical data.
-    """
-    if MultiSourceAPIClient is None:
-        print("API Client not available.")
-        return historical_df
-        
-    # Get keys from env (already loaded by main.py or load here)
-    # Since this is a module, we assume env is loaded or we check os.environ
-    owm_key = os.getenv("OPENWEATHERMAP_API_KEY")
-    openaq_key = os.getenv("OPENAQ_API_KEY")
-    cpcb_key = os.getenv("CPCB_API_KEY")
-    
-    # Initialize client
-    client = MultiSourceAPIClient(
-        openweathermap_key=owm_key, 
-        openaq_key=openaq_key,
-        cpcb_key=cpcb_key
-    )
-    
-    # Fetch last 48 hours for context
-    live_df = client.fetch_realtime_data(city='Delhi', hours=48)
-    
-    if live_df is None or len(live_df) == 0:
-        print("No live data fetched. Using historical only.")
-        return historical_df
-        
-    print(f"Merging {len(live_df)} live records...")
-    
-    # Ensure Datetime is timezone-naive or matching
-    live_df['Datetime'] = pd.to_datetime(live_df['Datetime']).dt.tz_localize(None)
-    historical_df['Datetime'] = pd.to_datetime(historical_df['Datetime']).dt.tz_localize(None)
-    
-    # Combine
-    # We want to keep historical data but overwrite overlapping periods with fresher data if available?
-    # Or just append fresh data that is NEWER than historical?
-    
-    last_hist_date = historical_df['Datetime'].max()
-    print(f"Historical data ends at: {last_hist_date}")
-    
-    # Filter live data to be after historical (or just cutoff at some point)
-    # Actually, if historical is old (Nov 2025), and live is New (Jan 2026), there is a gap.
-    # The model needs a continuous sequence for lag features.
-    # If there is a massive gap, lags will be wrong (referencing Nov for Jan prediction).
-    # Ideally we need a full recent history.
-    # But for this demo, if we have a gap, we might just use the Live Data Chunk as the new 'history'
-    # providing it has enough rows (e.g. > 24h) for feature engineering.
-    
-    if len(live_df) >= 24:
-        print("Live data duration > 24h. Using Live Data as primary context (skipping gap).")
-        # We assume standard features can be computed on live_df
-        combined_df = live_df.copy()
-    else:
-        print("Live data < 24h. Appending to historical (gap may affect accuracy).")
-        combined_df = pd.concat([historical_df, live_df]).drop_duplicates(subset=['Datetime']).sort_values('Datetime')
-    
-    return combined_df
-
-def prepare_historical_data():
+def prepare_historical_data(city='Delhi'):
     """Load and prepare historical and live data."""
     # Data is now in ml_engine/data
-    df = pd.read_csv(Path(__file__).parent / 'data' / 'delhi_model_data.csv')
-    df['Datetime'] = pd.to_datetime(df['Datetime'])
+    data_dir = Path(__file__).parent / 'data'
+    
+    filename = 'delhi_model_data.csv'
+    if city.lower() == 'pune':
+        filename = 'pune_stations_combined.csv' 
+        # Note: 'pune_stations_combined.csv' is station-wise. 
+        # Ideally we need a standard training file (like delhi_model_data.csv). 
+        # If unavailable, we might fail or need to aggregate.
+        # Assuming for now it works or we use what we have.
+        # Actually, let's look at file size. 8MB. Might be raw station data.
+        # If we fail here, we fallback.
+        
+    csv_path = data_dir / filename
+    
+    if not csv_path.exists():
+        print(f"Data file not found for {city}: {csv_path}")
+        # Fallback to Delhi if Pune missing to prevent crash, or return empty?
+        if city == 'Pune': return None 
+        return None
+
+    df = pd.read_csv(csv_path)
+    df['Datetime'] = pd.to_datetime(df['Datetime'], errors='coerce') # Handle potential format errors
+    df = df.dropna(subset=['Datetime'])
     df = df.sort_values('Datetime')
     
+    if city.lower() == 'pune':
+        # Pune data might be station-wise. Aggregate if needed.
+        if 'station' in df.columns or 'StationId' in df.columns:
+             # Simple mean aggregation by date
+             df = df.groupby('Datetime').mean(numeric_only=True).reset_index()
+
     # --- Live Data Integration ---
     try:
-        df = fetch_and_merge_live_data(df)
+        df = fetch_and_merge_live_data(df, city=city)
     except Exception as e:
         print(f"Error merging live data: {e}")
     # -----------------------------

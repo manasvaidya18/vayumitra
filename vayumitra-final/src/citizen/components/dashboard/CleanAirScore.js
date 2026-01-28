@@ -5,13 +5,14 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import Card from '../common/Card';
 import { fetchCitizenScore } from '../../../api/services';
 
-const CleanAirScore = () => {
+const CleanAirScore = ({ city }) => {
   const [data, setData] = useState(null);
 
   useEffect(() => {
     const loadScore = async () => {
       try {
-        const result = await fetchCitizenScore();
+        const cityName = city?.name || 'Delhi';
+        const result = await fetchCitizenScore(cityName);
         setData(result);
       } catch (err) {
         console.error("Failed to load clean air score:", err);
@@ -19,7 +20,7 @@ const CleanAirScore = () => {
     };
 
     loadScore();
-  }, []);
+  }, [city]);
 
   if (!data) {
     return (

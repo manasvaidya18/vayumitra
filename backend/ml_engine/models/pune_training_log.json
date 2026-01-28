@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-01-26T21:39:59.094848",
+  "metrics": {
+    "train_mae": 0.48552331046185215,
+    "train_rmse": 0.7631855283386133,
+    "train_r2": 0.9996446650988503,
+    "test_mae": 3.7681877450958297,
+    "test_rmse": 6.121106954326085,
+    "test_r2": 0.908992091899614
+  },
+  "num_features": 38,
+  "model_type": "XGBoost Regressor"
+}

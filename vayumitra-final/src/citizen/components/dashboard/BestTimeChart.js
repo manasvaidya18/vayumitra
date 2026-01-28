@@ -5,14 +5,15 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import Card from '../common/Card';
 import { fetchCitizenBestTime } from '../../../api/services';
 
-const BestTimeChart = () => {
+const BestTimeChart = ({ city }) => {
   const [data, setData] = useState([]);
   const [safeHours, setSafeHours] = useState([]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const result = await fetchCitizenBestTime();
+        const cityName = city?.name || 'Delhi';
+        const result = await fetchCitizenBestTime(cityName);
         if (result && Array.isArray(result)) {
           setData(result);
           // Use 'recommended' if available, otherwise fallback to 'safe'
@@ -24,7 +25,7 @@ const BestTimeChart = () => {
       }
     };
     loadData();
-  }, []);
+  }, [city]);
 
   if (data.length === 0) {
     return (

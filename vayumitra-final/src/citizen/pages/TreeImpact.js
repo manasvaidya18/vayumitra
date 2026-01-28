@@ -15,6 +15,11 @@ const TreeImpact = () => {
   const [showAnimation, setShowAnimation] = useState(false);
   const [currentAQI, setCurrentAQI] = useState(100);
 
+  // New state to track removal
+  const handleTreeRemove = (treeId) => {
+    setPlantedTrees(prev => prev.filter(t => t.id !== treeId));
+  };
+
   useEffect(() => {
     const getAQI = async () => {
       try {
@@ -30,40 +35,64 @@ const TreeImpact = () => {
   }, []);
 
   const treeTypes = [
-    { name: 'Banyan', co2: 22, pm25: 0.15, o2: 120, emoji: '🌳' },
-    { name: 'Neem', co2: 18, pm25: 0.12, o2: 100, emoji: '🌲' },
-    { name: 'Peepal', co2: 20, pm25: 0.14, o2: 110, emoji: '🌴' },
-    // { name: 'Mango', co2: 15, pm25: 0.10, o2: 90, emoji: '🥭' }
+    { name: 'Banyan', co2: 300, pm25: 0.25, o2: 400, emoji: '🌳', desc: 'Keystone species, massive carbon sink (approx. 300kg/yr).' },
+    { name: 'Neem', co2: 45, pm25: 0.18, o2: 130, emoji: '🌲', desc: 'Natural air purifier, high efficiency.' },
+    { name: 'Peepal', co2: 50, pm25: 0.20, o2: 140, emoji: '🌴', desc: 'Releases oxygen at night (CAM photosynthesis).' },
+    { name: 'Bamboo', co2: 80, pm25: 0.12, o2: 250, emoji: '🎍', desc: 'Fastest biomass growth, high annual sequestration.' },
+    { name: 'Ashoka', co2: 25, pm25: 0.12, o2: 90, emoji: '🎋', desc: 'Effective noise barrier, moderate absorption.' },
+    { name: 'Jamun', co2: 30, pm25: 0.15, o2: 100, emoji: '🍒', desc: 'Dense foliage traps particulates effectively.' },
+    { name: 'Teak', co2: 35, pm25: 0.14, o2: 110, emoji: '🪵', desc: 'Valuable timber, sequester carbon in dense wood.' },
+    { name: 'Gulmohar', co2: 30, pm25: 0.15, o2: 100, emoji: '🌺', desc: 'Wide decorative canopy, good shade.' }
   ];
 
   const durations = {
-    '1 month': 1,
     '1 year': 12,
-    '5 years': 60
+    '5 years': 60,
+    '10 years': 120,
+    '20 years': 240,
+    '30 years': 360
   };
 
   const cities = [
-    { name: 'Pimpri, Maharashtra', coords: [18.6298, 73.7997] },
-    { name: 'Mumbai, Maharashtra', coords: [19.0760, 72.8777] },
-    { name: 'Pune, Maharashtra', coords: [18.5204, 73.8567] },
-    { name: 'Delhi, Delhi', coords: [28.7041, 77.1025] },
-    { name: 'Bangalore, Karnataka', coords: [12.9716, 77.5946] },
-    { name: 'Hyderabad, Telangana', coords: [17.3850, 78.4867] }
+    { name: 'Pimpri, Maharashtra', coords: [18.6298, 73.7997], radius: 25 },
+    { name: 'Mumbai, Maharashtra', coords: [19.0760, 72.8777], radius: 30 },
+    { name: 'Pune, Maharashtra', coords: [18.5204, 73.8567], radius: 25 },
+    { name: 'Delhi, Delhi', coords: [28.7041, 77.1025], radius: 35 },
+    { name: 'Bangalore, Karnataka', coords: [12.9716, 77.5946], radius: 25 },
+    { name: 'Hyderabad, Telangana', coords: [17.3850, 78.4867], radius: 30 }
   ];
 
   // Calculate stats whenever inputs change
   useEffect(() => {
     calculateStats();
-  }, [treeType, duration, plantedTrees]);
+  }, [treeType, duration, plantedTrees, location]);
 
   const calculateStats = () => {
     const tree = treeTypes.find(t => t.name === treeType);
     const months = durations[duration];
-    const totalTrees = plantedTrees.length;
 
-    const co2Absorbed = Math.round(tree.co2 * totalTrees * months);
-    const pm25Reduction = (tree.pm25 * totalTrees * months).toFixed(2);
-    const aqiImprovement = Math.round(pm25Reduction * 4);
+    // Filter trees by current location only
+    const localTrees = plantedTrees.filter(t => t.location === location);
+    const totalTrees = localTrees.length;
+
+    // Realistic Impact Formulas with Calibration
+    // Maturity factor: Linear growth until 10 years (120 months)
+    const maturityCapC02 = 120; // 10 years to full CO2 maturity
+    const avgMaturity = Math.max(0.2, Math.min(1, months / maturityCapC02));
+
+    // CO2: Absorbed = (Rate * Count * Years * AvgMaturity)
+    const co2Absorbed = Math.round(tree.co2 * totalTrees * (months / 12) * avgMaturity);
+
+    // PM2.5 Reduction:
+    // Factor: (PM2.5_Rate * Count * Maturity) / DampingFactor (Local impact)
+    const pm25Base = (tree.pm25 * totalTrees * avgMaturity) / 6;
+    const pm25Reduction = Math.min(30, pm25Base).toFixed(2); // Cap at 30%
+
+    // AQI Improvement: 
+    // IND-AQI slope in Moderate/Poor zones is ~3.3 (1 µg/m3 drop ≈ 3.3 AQI points)
+    // We use 3.0 as a conservative realistic multiplier.
+    const aqiImprovement = Math.round(pm25Reduction * 3.0);
+
     const oxygenRelease = Math.round(tree.o2 * totalTrees);
 
     setStats({
@@ -80,7 +109,8 @@ const TreeImpact = () => {
     const treesToAdd = newTrees.map(tree => ({
       ...tree,
       type: treeType,
-      timestamp: new Date()
+      timestamp: new Date(),
+      location: location // Ensure location is set explicitly (redundant but safe)
     }));
 
     setPlantedTrees(prev => [...prev, ...treesToAdd]);
@@ -92,14 +122,38 @@ const TreeImpact = () => {
     const tree = treeTypes.find(t => t.name === treeType);
     const months = durations[duration];
     const data = [];
-    const totalTrees = plantedTrees.length;
 
-    const steps = Math.min(months, 12);
-    for (let i = 0; i <= steps; i++) {
+    // Determine step size (yearly for > 1 year, monthly for 1 year)
+    const totalYears = months / 12;
+    const isMultiYear = totalYears >= 2;
+    const stepCount = isMultiYear ? totalYears : months;
+
+    const totalTrees = plantedTrees.filter(t => t.location === location).length;
+
+    for (let i = 0; i <= stepCount; i++) {
+      const currentLabelVal = isMultiYear ? i : i;
+      const currentLabelUnit = isMultiYear ? 'Y' : 'M';
+      let label = i === 0 ? 'Now' : `${currentLabelVal}${currentLabelUnit}`;
+
+      // Calculate growth at this step
+      const currentMonths = isMultiYear ? i * 12 : i;
+
+      // Maturity curve up to 10 years (120 months)
+      const stepMaturity = Math.max(0.1, Math.min(1, currentMonths / 120));
+
+      // Dynamic PM2.5 reduction at this point in time
+      const currentPMReduct = (tree.pm25 * totalTrees * stepMaturity) / 6;
+
+      // Dynamic CO2 accumulation up to this point
+      const timeInYears = currentMonths / 12;
+      // Use average maturity over the period for accumulation
+      const avgEpochMaturity = Math.max(0.1, Math.min(1, (currentMonths / 2) / 120));
+      const currentCO2 = Math.round(tree.co2 * totalTrees * timeInYears * avgEpochMaturity);
+
       data.push({
-        month: i === 0 ? 'Now' : `${i}M`,
-        aqi: Math.max(50, currentAQI - (i * tree.pm25 * totalTrees * 4)),
-        co2: Math.round(tree.co2 * totalTrees * i)
+        month: label,
+        aqi: Math.max(50, currentAQI - (currentPMReduct * 3.0)),
+        co2: currentCO2
       });
     }
 
@@ -108,18 +162,22 @@ const TreeImpact = () => {
 
   const getAISuggestion = () => {
     const tree = treeTypes.find(t => t.name === treeType);
-    const totalTrees = plantedTrees.length;
-    const pm25 = (tree.pm25 * totalTrees * durations[duration]).toFixed(1);
+    const totalTrees = plantedTrees.filter(t => t.location === location).length;
+
+    // Recalculate PM2.5 for suggestion text
+    const months = durations[duration];
+    const maturityFactor = Math.min(1, months / 60); // 5y maturity cap
+    const pm25 = ((tree.pm25 * totalTrees * maturityFactor) / 6).toFixed(2);
     const cityName = location.split(',')[0];
 
     if (totalTrees === 0) {
       return `Click on the map to start planting ${treeType} trees in ${cityName}. Each click plants 5 trees! 🌱`;
     } else if (totalTrees < 20) {
-      return `You've planted ${totalTrees} ${treeType} trees in ${cityName}. Keep clicking to plant more for greater impact!`;
-    } else if (totalTrees < 50) {
-      return `Great progress! ${totalTrees} ${treeType} trees in ${cityName} can reduce PM2.5 by ${pm25}% over ${duration}. Add more for better results!`;
+      return `Good start! ${totalTrees} ${treeType} trees in ${cityName} can reduce local PM2.5 by ${pm25}% over ${duration}. Plant more for visible impact.`;
+    } else if (totalTrees < 100) {
+      return `Growing green! ${totalTrees} ${treeType} trees provide cleaner air for the neighborhood, reducing PM2.5 by ${pm25}%.`;
     } else {
-      return `Excellent! ${totalTrees} ${treeType} trees in ${cityName} can reduce PM2.5 by ${pm25}% over ${duration}. This will significantly improve air quality! 🎉`;
+      return `Long-term vision! ${totalTrees} ${treeType} trees in ${cityName} will remove massive CO₂ and drop PM2.5 by ${pm25}% over ${duration}.`;
     }
   };
 
@@ -339,8 +397,9 @@ const TreeImpact = () => {
             <InteractiveLeafletMap
               city={getCurrentCity()}
               treeType={treeType}
-              plantedTrees={plantedTrees}
+              plantedTrees={plantedTrees.filter(t => t.location === location)}
               onTreesPlanted={handleTreesPlanted}
+              onTreeRemove={handleTreeRemove}
             />
           </Card>
 

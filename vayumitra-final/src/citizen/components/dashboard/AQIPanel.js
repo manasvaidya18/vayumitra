@@ -7,16 +7,17 @@ import { getAQILevel, getGradientForAQI } from '../../utils/helpers';
 import { fetchCitizenAQI, fetchMLForecast } from '../../../api/services';
 import Card from '../common/Card';
 
-const AQIPanel = () => {
+const AQIPanel = ({ city }) => {
   const [data, setData] = useState(null);
   const [activeTab, setActiveTab] = useState('24h');
 
   useEffect(() => {
     const loadData = async () => {
       try {
+        const cityName = city?.name || 'Delhi';
         const [aqiData, forecastList] = await Promise.all([
-          fetchCitizenAQI(),
-          fetchMLForecast().catch(err => {
+          fetchCitizenAQI(cityName), // Fetches real-time AQI for selected city
+          fetchMLForecast(cityName).catch(err => {
             console.error("ML Forecast fetch failed", err);
             return null;
           })
@@ -46,7 +47,7 @@ const AQIPanel = () => {
       }
     };
     loadData();
-  }, []);
+  }, [city]);
 
   const processForecastData = (forecastList, currentAQI) => {
     // 1. Hourly 24h

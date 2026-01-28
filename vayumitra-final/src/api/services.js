@@ -106,26 +106,26 @@ export const fetchPolicySimulation = async () => {
 
 // --- Citizen API ---
 
-export const fetchCitizenAQI = async () => {
-    const res = await fetch(`${BASE_URL}/api/citizen/aqi`);
+export const fetchCitizenAQI = async (city = 'Delhi') => {
+    const res = await fetch(`${BASE_URL}/api/citizen/aqi?city=${city}`);
     if (!res.ok) throw new Error('Failed to fetch AQI');
     return res.json();
 };
 
-export const fetchCitizenScore = async () => {
-    const res = await fetch(`${BASE_URL}/api/citizen/score`);
+export const fetchCitizenScore = async (city = 'Delhi') => {
+    const res = await fetch(`${BASE_URL}/api/citizen/score?city=${city}`);
     if (!res.ok) throw new Error('Failed to fetch score');
     return res.json();
 };
 
-export const fetchCitizenBestTime = async () => {
-    const res = await fetch(`${BASE_URL}/api/citizen/best-time`);
+export const fetchCitizenBestTime = async (city = 'Delhi') => {
+    const res = await fetch(`${BASE_URL}/api/citizen/best-time?city=${city}`);
     if (!res.ok) throw new Error('Failed to fetch best time data');
     return res.json();
 };
 
-export const fetchCitizenShockPredictor = async () => {
-    const res = await fetch(`${BASE_URL}/api/citizen/shock-predictor`);
+export const fetchCitizenShockPredictor = async (city = 'Delhi') => {
+    const res = await fetch(`${BASE_URL}/api/citizen/shock-predictor?city=${city}`);
     if (!res.ok) throw new Error('Failed to fetch shock predictor');
     return res.json();
 };
@@ -136,8 +136,8 @@ export const fetchCitizenGreenSuggestions = async () => {
     return res.json();
 };
 
-export const fetchCitizenWildlife = async () => {
-    const res = await fetch(`${BASE_URL}/api/citizen/wildlife`);
+export const fetchCitizenWildlife = async (city = 'Delhi') => {
+    const res = await fetch(`${BASE_URL}/api/citizen/wildlife?city=${city}`);
     if (!res.ok) throw new Error('Failed to fetch wildlife data');
     return res.json();
 };
@@ -158,8 +158,8 @@ export const fetchCitizenHealthRisk = async (ageGroup, conditions) => {
     return res.json();
 };
 
-export const fetchMLForecast = async () => {
-    const res = await fetch(`${BASE_URL}/api/ml/forecast-3day`);
+export const fetchMLForecast = async (city = 'Delhi') => {
+    const res = await fetch(`${BASE_URL}/api/ml/forecast-3day?city=${city}`);
     if (!res.ok) throw new Error('Failed to fetch ML forecast');
     return res.json();
 };

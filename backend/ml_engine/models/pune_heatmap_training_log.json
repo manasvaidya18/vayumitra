@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-01-26T21:40:51.305478",
+  "metrics": {
+    "train_mae": 6.20344586327043,
+    "train_rmse": 9.734421288122478,
+    "train_r2": 0.9034080251681065,
+    "test_mae": 8.87035016744145,
+    "test_rmse": 16.588542893969972,
+    "test_r2": 0.7466793315252351
+  },
+  "num_stations": 11,
+  "stations": [
+    "292_Karve_Road",
+    "5404_Mhada_Colony",
+    "5406_Bhosari",
+    "5407_Hadapsar",
+    "5408_Transport_Nagar-Nigdi",
+    "5409_Revenue_Colony-Shivajinagar",
+    "5410_MIT-Kothrud",
+    "5766_Katraj_Dairy",
+    "5767_Savitribai_Phule",
+    "5988_Bhumkar_Nagar",
+    "5996_Panchawati_Pashan"
+  ],
+  "model_type": "XGBoost Regressor (PM2.5 \u2192 AQI)"
+}
