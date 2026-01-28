@@ -1,12 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Lightbulb, Trees, Bus, Wind, Home, Users, CheckCircle2, IndianRupee, Clock } from 'lucide-react';
+import { Lightbulb, Trees, Bus, Wind, Home, Users, CheckCircle2, IndianRupee, Clock, MapPin } from 'lucide-react';
 import { getGreenSuggestions } from '../../utils/mockData';
 import Card from '../common/Card';
 
 const GreenSuggestions = () => {
-  const suggestions = getGreenSuggestions();
+  const [selectedCity, setSelectedCity] = useState('Delhi, Delhi');
+  const [suggestions, setSuggestions] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
+
+  useEffect(() => {
+    setSuggestions(getGreenSuggestions(selectedCity));
+  }, [selectedCity]);
+
+  const cities = [
+    { name: 'Pimpri, Maharashtra', coords: [18.6298, 73.7997] },
+    { name: 'Mumbai, Maharashtra', coords: [19.0760, 72.8777] },
+    { name: 'Pune, Maharashtra', coords: [18.5204, 73.8567] },
+    { name: 'Delhi, Delhi', coords: [28.7041, 77.1025] },
+    { name: 'Bangalore, Karnataka', coords: [12.9716, 77.5946] },
+    { name: 'Hyderabad, Telangana', coords: [17.3850, 78.4867] }
+  ];
 
   const iconMap = {
     Trees: Trees,
@@ -36,13 +50,28 @@ const GreenSuggestions = () => {
     <div className="space-y-6">
       {/* Header */}
       <Card>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
           <div className="flex items-center">
             <Lightbulb className="w-6 h-6 text-yellow-500 mr-3" />
             <div>
               <h2 className="text-2xl font-bold gradient-text">AI-Powered Green Suggestions</h2>
-              <p className="text-sm text-slate-600 mt-1">Personalized recommendations to improve air quality</p>
+              <p className="text-sm text-slate-600 mt-1">Personalized recommendations for {selectedCity}</p>
             </div>
+          </div>
+
+          <div className="relative">
+            <select
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+              className="pl-10 pr-4 py-2 rounded-xl bg-white border-2 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all appearance-none cursor-pointer font-semibold text-slate-700 min-w-[200px]"
+            >
+              {cities.map(city => (
+                <option key={city.name} value={city.name}>
+                  {city.name}
+                </option>
+              ))}
+            </select>
+            <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-indigo-600 pointer-events-none" />
           </div>
         </div>
 
@@ -54,11 +83,10 @@ const GreenSuggestions = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
-                selectedCategory === cat
-                  ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-glow'
-                  : 'bg-white/60 text-slate-700 border border-slate-200 hover:border-indigo-300'
-              }`}
+              className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all ${selectedCategory === cat
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-glow'
+                : 'bg-white/60 text-slate-700 border border-slate-200 hover:border-indigo-300'
+                }`}
             >
               {cat}
             </motion.button>

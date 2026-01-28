@@ -102,63 +102,111 @@ export const getShockPredictorData = () => ({
   ]
 });
 
-export const getGreenSuggestions = () => [
-  {
-    id: 1,
-    title: 'Plant Native Trees',
-    impact: 85,
-    category: 'Plantation',
-    icon: 'Trees',
-    description: 'Planting 50 native trees can reduce PM2.5 by 15% in your area',
-    actionable: true,
-    cost: 'Low',
-    timeframe: '6 months'
-  },
-  {
-    id: 2,
-    title: 'Use Public Transport',
-    impact: 72,
-    category: 'Transport',
-    icon: 'Bus',
-    description: 'Switching to public transport can reduce CO emissions by 2.5kg/day',
-    actionable: true,
-    cost: 'Very Low',
-    timeframe: 'Immediate'
-  },
-  {
-    id: 3,
-    title: 'Install Air Purifiers',
-    impact: 68,
-    category: 'Indoor',
-    icon: 'Wind',
-    description: 'HEPA filters can improve indoor air quality by 90%',
-    actionable: true,
-    cost: 'Medium',
-    timeframe: 'Immediate'
-  },
-  {
-    id: 4,
-    title: 'Create Green Roofs',
-    impact: 78,
-    category: 'Infrastructure',
-    icon: 'Home',
-    description: 'Green roofs reduce urban heat and absorb pollutants',
-    actionable: false,
-    cost: 'High',
-    timeframe: '1 year'
-  },
-  {
-    id: 5,
-    title: 'Carpool to Work',
-    impact: 65,
-    category: 'Transport',
-    icon: 'Users',
-    description: 'Carpooling reduces vehicle emissions by 50%',
-    actionable: true,
-    cost: 'Very Low',
-    timeframe: 'Immediate'
+export const getGreenSuggestions = (city = 'Delhi, Delhi') => {
+  const commonSuggestions = [
+    {
+      id: 1,
+      title: 'Plant Native Trees',
+      impact: 85,
+      category: 'Plantation',
+      icon: 'Trees',
+      description: 'Planting 50 native trees can reduce PM2.5 by 15% in your area',
+      actionable: true,
+      cost: 'Low',
+      timeframe: '6 months'
+    },
+    {
+      id: 3,
+      title: 'Install Air Purifiers',
+      impact: 68,
+      category: 'Indoor',
+      icon: 'Wind',
+      description: 'HEPA filters can improve indoor air quality by 90%',
+      actionable: true,
+      cost: 'Medium',
+      timeframe: 'Immediate'
+    },
+    {
+      id: 4,
+      title: 'Create Green Roofs',
+      impact: 78,
+      category: 'Infrastructure',
+      icon: 'Home',
+      description: 'Green roofs reduce urban heat and absorb pollutants',
+      actionable: false,
+      cost: 'High',
+      timeframe: '1 year'
+    }
+  ];
+
+  const delhiSuggestions = [
+    {
+      id: 101,
+      title: 'Follow Odd-Even Scheme',
+      impact: 90,
+      category: 'Transport',
+      icon: 'Bus',
+      description: 'Adhering to vehicle rationing reduces traffic emissions significantly.',
+      actionable: true,
+      cost: 'Very Low',
+      timeframe: 'Determined by Govt'
+    },
+    {
+      id: 102,
+      title: 'Report Stubble Burning',
+      impact: 95,
+      category: 'Plantation', // Using Plantation category for agricultural related
+      icon: 'Trees',
+      description: 'Report incidents of stubble burning to local authorities immediately.',
+      actionable: true,
+      cost: 'Zero',
+      timeframe: 'Immediate'
+    },
+    {
+      id: 103,
+      title: 'Use Metro Services',
+      impact: 80,
+      category: 'Transport',
+      icon: 'Bus',
+      description: 'Delhi Metro is the greenest way to travel across the NCR region.',
+      actionable: true,
+      cost: 'Low',
+      timeframe: 'Immediate'
+    }
+  ];
+
+  const genericSuggestions = [
+    {
+      id: 2,
+      title: 'Use Public Transport',
+      impact: 72,
+      category: 'Transport',
+      icon: 'Bus',
+      description: 'Switching to public transport can reduce CO emissions by 2.5kg/day',
+      actionable: true,
+      cost: 'Very Low',
+      timeframe: 'Immediate'
+    },
+    {
+      id: 5,
+      title: 'Carpool to Work',
+      impact: 65,
+      category: 'Transport',
+      icon: 'Users',
+      description: 'Carpooling reduces vehicle emissions by 50%',
+      actionable: true,
+      cost: 'Very Low',
+      timeframe: 'Immediate'
+    }
+  ];
+
+  // Merge suggestions based on city
+  if (city.includes('Delhi')) {
+    return [...delhiSuggestions, ...commonSuggestions];
+  } else {
+    return [...genericSuggestions, ...commonSuggestions];
   }
-];
+};
 
 export const getWildlifeData = () => ({
   overallHealth: 62,

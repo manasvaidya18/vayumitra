@@ -4,6 +4,7 @@ import { Trees, Leaf, Wind, TrendingDown, Droplets, MapPin, Sparkles, Info } fro
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Card from '../components/common/Card';
 import InteractiveLeafletMap from '../components/features/InteractiveLeafletMap';
+import { fetchCitizenAQI } from '../../api/services';
 
 const TreeImpact = () => {
   const [treeType, setTreeType] = useState('Neem');
@@ -12,6 +13,21 @@ const TreeImpact = () => {
   const [plantedTrees, setPlantedTrees] = useState([]);
   const [stats, setStats] = useState({});
   const [showAnimation, setShowAnimation] = useState(false);
+  const [currentAQI, setCurrentAQI] = useState(100);
+
+  useEffect(() => {
+    const getAQI = async () => {
+      try {
+        const data = await fetchCitizenAQI();
+        if (data && data.aqi) {
+          setCurrentAQI(data.aqi);
+        }
+      } catch (error) {
+        console.error("Failed to fetch AQI", error);
+      }
+    };
+    getAQI();
+  }, []);
 
   const treeTypes = [
     { name: 'Banyan', co2: 22, pm25: 0.15, o2: 120, emoji: '🌳' },
@@ -66,7 +82,7 @@ const TreeImpact = () => {
       type: treeType,
       timestamp: new Date()
     }));
-    
+
     setPlantedTrees(prev => [...prev, ...treesToAdd]);
     setShowAnimation(true);
     setTimeout(() => setShowAnimation(false), 1000);
@@ -82,7 +98,7 @@ const TreeImpact = () => {
     for (let i = 0; i <= steps; i++) {
       data.push({
         month: i === 0 ? 'Now' : `${i}M`,
-        aqi: Math.max(50, 100 - (i * tree.pm25 * totalTrees * 4)),
+        aqi: Math.max(50, currentAQI - (i * tree.pm25 * totalTrees * 4)),
         co2: Math.round(tree.co2 * totalTrees * i)
       });
     }
@@ -197,11 +213,10 @@ const TreeImpact = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setDuration(dur)}
-                      className={`py-3 px-2 rounded-xl font-semibold text-sm transition-all ${
-                        duration === dur
-                          ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-glow'
-                          : 'bg-white/60 text-slate-700 border-2 border-slate-200 hover:border-green-300'
-                      }`}
+                      className={`py-3 px-2 rounded-xl font-semibold text-sm transition-all ${duration === dur
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-glow'
+                        : 'bg-white/60 text-slate-700 border-2 border-slate-200 hover:border-green-300'
+                        }`}
                     >
                       {dur}
                     </motion.button>
@@ -320,7 +335,7 @@ const TreeImpact = () => {
                 <span>Click to plant 5 trees</span>
               </div>
             </div>
-            
+
             <InteractiveLeafletMap
               city={getCurrentCity()}
               treeType={treeType}
