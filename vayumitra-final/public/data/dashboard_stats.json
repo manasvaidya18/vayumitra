@@ -1,0 +1,75 @@
+{
+  "generated_at": "2026-01-27T21:01:52.155889",
+  "live_aqi": 473,
+  "live_breakdown": {
+    "PM2.5": 344.4,
+    "PM10": 266.2,
+    "NO2": 79.5,
+    "SO2": 19.5,
+    "CO": 59.4,
+    "O3": 27.0
+  },
+  "weekly_trend": [
+    {
+      "date": "2026-01-21",
+      "day": "Wed",
+      "aqi": 0
+    },
+    {
+      "date": "2026-01-22",
+      "day": "Thu",
+      "aqi": 389
+    },
+    {
+      "date": "2026-01-23",
+      "day": "Fri",
+      "aqi": 128
+    },
+    {
+      "date": "2026-01-24",
+      "day": "Sat",
+      "aqi": 54
+    },
+    {
+      "date": "2026-01-25",
+      "day": "Sun",
+      "aqi": 148
+    },
+    {
+      "date": "2026-01-26",
+      "day": "Mon",
+      "aqi": 264
+    },
+    {
+      "date": "2026-01-27",
+      "day": "Tue",
+      "aqi": 473
+    }
+  ],
+  "data_source": "cpcb_api",
+  "note": "Real-time AQI based on current CPCB readings. Values may be higher than 24-hour averaged AQI shown on other platforms.",
+  "trend_source": "openweathermap_historical",
+  "weather_real": {
+    "temperature": 14,
+    "humidity": 88,
+    "windSpeed": 14.8,
+    "pressure": 1016,
+    "rainProbability": 0,
+    "description": "mist",
+    "confidence": 92,
+    "trends": {
+      "temperature": "up",
+      "humidity": "down",
+      "windSpeed": "neutral",
+      "pressure": "neutral",
+      "rain": "neutral"
+    },
+    "impacts": {
+      "temperature": "neutral",
+      "humidity": "worsens",
+      "windSpeed": "improves",
+      "pressure": "neutral",
+      "rain": "neutral"
+    }
+  }
+}

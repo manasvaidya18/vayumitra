@@ -8,8 +8,14 @@ const WeatherCorrelation = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await fetchWeatherData();
-        setWeatherData(data);
+        const response = await fetch('/data/dashboard_stats.json');
+        if (response.ok) {
+          const data = await response.json();
+          // Use the weather_real object we just added to backend
+          if (data.weather_real) {
+            setWeatherData(data.weather_real);
+          }
+        }
       } catch (error) {
         console.error("Error loading weather data:", error);
       }
@@ -60,10 +66,10 @@ const WeatherCorrelation = () => {
       <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-slate-700">Forecast Confidence:</span>
-          <span className="text-sm font-bold text-indigo-600">82%</span>
+          <span className="text-sm font-bold text-indigo-600">{weatherData.confidence || 85}%</span>
         </div>
         <div className="w-full bg-slate-200 rounded-full h-3 mt-2 overflow-hidden">
-          <div className="h-full bg-indigo-600 rounded-full" style={{ width: '82%' }}></div>
+          <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${weatherData.confidence || 85}%` }}></div>
         </div>
       </div>
     </Card>

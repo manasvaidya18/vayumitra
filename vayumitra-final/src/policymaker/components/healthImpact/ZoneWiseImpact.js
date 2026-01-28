@@ -1,18 +1,29 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Card from '../common/Card';
 import Button from '../common/Button';
-import { fetchZoneHealth } from '../../../api/services';
+import { downloadCSV } from '../../utils/helpers';
 
 const ZoneWiseImpact = () => {
-  const [zoneData, setZoneData] = useState([]);
+  const [stationData, setStationData] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await fetchZoneHealth();
-        setZoneData(data);
+        const response = await fetch('/data/station_rankings.json');
+        if (response.ok) {
+          const stations = await response.json();
+          const { calculateHealthImpacts } = require('../../utils/health_impact_model');
+
+          const impact = calculateHealthImpacts(stations);
+          if (impact && impact.stationImpacts) {
+            // Show Top 5 by default or maybe top 8 to fit card
+            setStationData(impact.stationImpacts.slice(0, 10));
+          }
+        }
       } catch (error) {
-        console.error("Error loading zone health impact:", error);
+        console.error("Error loading station health impact:", error);
       }
     };
     loadData();
@@ -28,31 +39,40 @@ const ZoneWiseImpact = () => {
     return colors[risk] || colors.MEDIUM;
   };
 
-  if (!zoneData.length) return <Card>Loading zone impact...</Card>;
+  const handleExport = () => {
+    if (stationData.length > 0) {
+      downloadCSV(stationData, 'station_health_impact.csv');
+    }
+  };
+
+  if (!stationData.length) return <Card>Loading station impact...</Card>;
 
   return (
     <Card>
-      <h2 className="text-xl font-bold text-slate-800 mb-4">🗺️ Zone-Wise Impact</h2>
+      <h2 className="text-xl font-bold text-slate-800 mb-4">📍 Station-Wise Impact</h2>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-h-96 overflow-y-auto">
         <table className="w-full">
-          <thead>
+          <thead className="sticky top-0 z-10">
             <tr className="bg-slate-100 border-b-2 border-slate-200">
-              <th className="text-left p-3 text-sm font-semibold text-slate-700">Zone</th>
-              <th className="text-left p-3 text-sm font-semibold text-slate-700">Population</th>
-              <th className="text-left p-3 text-sm font-semibold text-slate-700">Cases</th>
+              <th className="text-left p-3 text-sm font-semibold text-slate-700">Station</th>
+              <th className="text-left p-3 text-sm font-semibold text-slate-700">Est. Pop.</th>
+              <th className="text-left p-3 text-sm font-semibold text-slate-700">Excess Cases</th>
               <th className="text-left p-3 text-sm font-semibold text-slate-700">Risk</th>
             </tr>
           </thead>
           <tbody>
-            {zoneData.map((zone) => (
-              <tr key={zone.zone} className="border-b border-slate-200 hover:bg-slate-50">
-                <td className="p-3 text-sm font-bold text-slate-800">{zone.zone}</td>
-                <td className="p-3 text-sm text-slate-600">{zone.population.toLocaleString()}</td>
-                <td className="p-3 text-sm font-semibold text-slate-800">{zone.cases.toLocaleString()}</td>
+            {stationData.map((st) => (
+              <tr key={st.station} className="border-b border-slate-200 hover:bg-slate-50">
                 <td className="p-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${getRiskColor(zone.risk)}`}>
-                    {zone.risk}
+                  <div className="font-bold text-slate-800 text-sm">{st.station}</div>
+                  <div className="text-xs text-slate-500">{st.zone}</div>
+                </td>
+                <td className="p-3 text-sm text-slate-600">{st.population.toLocaleString()}</td>
+                <td className="p-3 text-sm font-semibold text-slate-800">{st.cases.toLocaleString()}</td>
+                <td className="p-3">
+                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${getRiskColor(st.risk)}`}>
+                    {st.risk}
                   </span>
                 </td>
               </tr>
@@ -62,10 +82,20 @@ const ZoneWiseImpact = () => {
       </div>
 
       <div className="mt-4 flex space-x-2">
-        <Button variant="outline" size="sm" className="flex-1">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1"
+          onClick={() => navigate('/policymaker/hotspots')}
+        >
           View Map
         </Button>
-        <Button variant="secondary" size="sm" className="flex-1">
+        <Button
+          variant="secondary"
+          size="sm"
+          className="flex-1"
+          onClick={handleExport}
+        >
           Export Data
         </Button>
       </div>

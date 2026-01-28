@@ -5,12 +5,25 @@ import { fetchForecast } from '../../../api/services';
 
 const ForecastChart = () => {
   const [forecastData, setForecastData] = useState([]);
+  const [metric, setMetric] = useState('aqi'); // 'aqi', 'PM2.5', 'PM10', 'NO2', 'all'
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await fetchForecast();
-        setForecastData(data);
+        const response = await fetch('/data/city_forecast_72h.json');
+        if (response.ok) {
+          const data = await response.json();
+          const formatted = data.map(item => {
+            const d = new Date(item.time);
+            return {
+              ...item, // Keep all pollutants
+              day: d.toLocaleDateString('en-IN', { weekday: 'short', hour: 'numeric', hour12: true }),
+              label: `${d.getDate()}th ${d.getHours()}:00`,
+              fullDate: d
+            };
+          });
+          setForecastData(formatted);
+        }
       } catch (error) {
         console.error("Error loading forecast data:", error);
       }
@@ -22,7 +35,7 @@ const ForecastChart = () => {
 
   return (
     <Card>
-      <h2 className="text-xl font-bold text-slate-800 mb-4">📈 7-Day Forecast Chart</h2>
+      <h2 className="text-xl font-bold text-slate-800 mb-4">📈 3-Day Forecast Chart</h2>
 
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
@@ -32,9 +45,13 @@ const ForecastChart = () => {
                 <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
                 <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
               </linearGradient>
+              <linearGradient id="colorPm25" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+              </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis dataKey="day" stroke="#64748b" />
+            <XAxis dataKey="label" stroke="#64748b" minTickGap={30} />
             <YAxis stroke="#64748b" />
             <Tooltip
               contentStyle={{
@@ -44,31 +61,40 @@ const ForecastChart = () => {
                 boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
               }}
             />
-            <Area
-              type="monotone"
-              dataKey="aqi"
-              stroke="#6366f1"
-              strokeWidth={3}
-              fillOpacity={1}
-              fill="url(#colorAqi)"
-            />
+
+            {(metric === 'aqi' || metric === 'all') && (
+              <Area type="monotone" dataKey="aqi" name="AQI" stroke="#6366f1" strokeWidth={3} fillOpacity={metric === 'all' ? 0.1 : 1} fill="url(#colorAqi)" />
+            )}
+
+            {(metric === 'PM2.5' || metric === 'all') && (
+              <Area type="monotone" dataKey="PM2.5" name="PM2.5" stroke="#ef4444" strokeWidth={metric === 'all' ? 2 : 3} fillOpacity={metric === 'PM2.5' ? 1 : 0.1} fill={metric === 'PM2.5' ? "url(#colorPm25)" : "none"} />
+            )}
+
+            {(metric === 'PM10' || metric === 'all') && (
+              <Area type="monotone" dataKey="PM10" name="PM10" stroke="#f59e0b" strokeWidth={metric === 'all' ? 2 : 3} fillOpacity={metric === 'PM10' ? 1 : 0} fill="none" />
+            )}
+
+            {(metric === 'NO2' || metric === 'all') && (
+              <Area type="monotone" dataKey="NO2" name="NO2" stroke="#10b981" strokeWidth={2} fill="none" />
+            )}
+
           </AreaChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-4 flex justify-center space-x-2">
-        <button className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium">
-          PM2.5
-        </button>
-        <button className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">
-          PM10
-        </button>
-        <button className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">
-          NO2
-        </button>
-        <button className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">
-          All Pollutants
-        </button>
+      <div className="mt-4 flex justify-center space-x-2 flex-wrap gap-y-2">
+        {['aqi', 'PM2.5', 'PM10', 'NO2', 'all'].map(m => (
+          <button
+            key={m}
+            onClick={() => setMetric(m)}
+            className={`px-3 py-1 rounded-lg text-sm font-medium capitalize transition-colors ${metric === m
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+          >
+            {m === 'all' ? 'All Pollutants' : m.toUpperCase()}
+          </button>
+        ))}
       </div>
     </Card>
   );

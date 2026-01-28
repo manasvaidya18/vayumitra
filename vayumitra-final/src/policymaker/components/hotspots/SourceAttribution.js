@@ -2,20 +2,42 @@ import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import { fetchSourceAttribution } from '../../../api/services';
 
-const SourceAttribution = () => {
+const SourceAttribution = ({ timeFilter }) => {
   const [attribution, setAttribution] = useState([]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await fetchSourceAttribution();
-        setAttribution(data);
+        let url = '/api/policymaker/source-attribution'; // Default live
+        // Since we are serving static files via API or direct public folder
+        // The API endpoint /api/policymaker/source-attribution serves the live/generated file.
+        // For 7d, we need to point to the new file.
+
+        // If we want to stay consistent with other components fetching from /data/
+        if (timeFilter === 'week' || timeFilter === 'month') {
+          url = '/data/source_attribution_7d.json';
+        } else {
+          // Use the generated live file directly to avoid API routing latency/cache issues
+          url = '/data/source_attribution.json';
+        }
+
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          setAttribution(data);
+        } else {
+          // Fallback to API if direct file fails (e.g. first run)
+          if (url === '/data/source_attribution.json') {
+            const apiRes = await fetch('/api/policymaker/source-attribution');
+            if (apiRes.ok) setAttribution(await apiRes.json());
+          }
+        }
       } catch (error) {
         console.error("Error loading source attribution:", error);
       }
     };
     loadData();
-  }, []);
+  }, [timeFilter]);
 
   if (!attribution.length) return <Card>Loading sources...</Card>;
 

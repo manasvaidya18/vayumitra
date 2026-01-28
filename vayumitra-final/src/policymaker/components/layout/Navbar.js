@@ -1,10 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import ProfileDropdown from "./ProfileDropdown";
-
+import { useCity } from '../../../context/CityContext';
 
 const Navbar = ({ toggleSidebar }) => {
   const navigate = useNavigate();
+  const { city, setCity } = useCity();
 
   const handleLogout = () => {
     // Add logout logic here
@@ -49,6 +49,20 @@ const Navbar = ({ toggleSidebar }) => {
                 <p className="text-xs text-slate-500">Government Air Quality Management</p>
               </div>
             </div>
+
+            {/* City Selector */}
+            <div className="ml-8 hidden md:block">
+              <select
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5 shadow-sm"
+              >
+                <option value="Delhi">📍 Delhi (NCR)</option>
+                <option value="Mumbai">📍 Mumbai</option>
+                <option value="Bangalore">📍 Bangalore</option>
+                <option value="Hyderabad">📍 Hyderabad</option>
+              </select>
+            </div>
           </div>
 
           {/* Right Section */}
@@ -72,7 +86,36 @@ const Navbar = ({ toggleSidebar }) => {
             </button>
 
             {/* User Profile */}
-            <ProfileDropdown />
+            <div className="flex items-center space-x-3">
+              <div className="text-right">
+                <p className="text-sm font-semibold text-slate-700">Admin User</p>
+                <p className="text-xs text-slate-500">Government Official</p>
+              </div>
+              <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                <span className="text-indigo-600 font-semibold">AU</span>
+              </div>
+            </div>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+              <span className="font-medium">Logout</span>
+            </button>
           </div>
         </div>
       </div>

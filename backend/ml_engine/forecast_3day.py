@@ -169,31 +169,45 @@ def forecast_next_hours(model, scaler, feature_names, df, hours=72):
     last_row = df.iloc[-1].copy()
     last_datetime = last_row['Datetime']
     
+    # Ensure standard python datetime
+    if isinstance(last_datetime, pd.Timestamp):
+        last_datetime = last_datetime.to_pydatetime()
+        
+    start_time_limit = datetime.now()
+    
     # Build AQI history (last 24 hours)
     aqi_history = df['AQI_computed'].tail(24).tolist()
     
-    # Get last known pollutant values (we'll assume they persist with slight variation)
+    # Get last known pollutant values
     pollutant_cols = ['PM2_5_ugm3', 'PM10_ugm3', 'NO2_ugm3', 'CO_ugm3', 'O3_ugm3', 'SO2_ugm3',
                       'Temp_2m_C', 'Humidity_Percent', 'Wind_Speed_10m_kmh']
     last_pollutants = {col: last_row[col] for col in pollutant_cols if col in df.columns}
     
     forecasts = []
     
-    print(f'\nForecasting from: {last_datetime}')
-    print(f'Last known AQI: {aqi_history[-1]:.1f}')
+    print(f'\nForecasting from data end: {last_datetime}')
+    print(f'Target start time: {start_time_limit}')
     print('-' * 60)
     
-    for h in range(1, hours + 1):
-        # Calculate future datetime
-        future_dt = last_datetime + timedelta(hours=h)
+    # We loop indefinitely until we generate enough "future" hours
+    # We use 'h' to track simulation steps from last_datetime
+    h = 0
+    generated_count = 0
+    
+    # Safety break to prevent infinite loop if dates are wildly wrong
+    max_steps = 72 + 24*10 # 72 hours forecast + 10 days lag catchup
+    
+    while generated_count < hours and h < max_steps:
+        h += 1
+        # Calculate simulation datetime
+        sim_dt = last_datetime + timedelta(hours=h)
         
         # Create feature row
         features = {}
         
-        # Pollutant features (use last known with slight diurnal variation)
-        hour_of_day = future_dt.hour
+        # Pollutant features
+        hour_of_day = sim_dt.hour
         
-        # Simple diurnal pattern: pollution higher in morning/evening rush hours
         if hour_of_day in [7, 8, 9, 18, 19, 20]:
             pollution_factor = 1.1
         elif hour_of_day in [2, 3, 4, 5]:
@@ -209,15 +223,15 @@ def forecast_next_hours(model, scaler, feature_names, df, hours=72):
         
         # Temporal features
         features['hour'] = hour_of_day
-        features['day_of_week'] = future_dt.weekday()
-        features['month'] = future_dt.month
-        features['is_weekend'] = 1 if future_dt.weekday() >= 5 else 0
+        features['day_of_week'] = sim_dt.weekday()
+        features['month'] = sim_dt.month
+        features['is_weekend'] = 1 if sim_dt.weekday() >= 5 else 0
         features['hour_sin'] = np.sin(2 * np.pi * hour_of_day / 24)
         features['hour_cos'] = np.cos(2 * np.pi * hour_of_day / 24)
-        features['month_sin'] = np.sin(2 * np.pi * future_dt.month / 12)
-        features['month_cos'] = np.cos(2 * np.pi * future_dt.month / 12)
+        features['month_sin'] = np.sin(2 * np.pi * sim_dt.month / 12)
+        features['month_cos'] = np.cos(2 * np.pi * sim_dt.month / 12)
         
-        # Lag features (from AQI history)
+        # Lag features
         for lag in LAG_HOURS:
             if lag <= len(aqi_history):
                 features[f'AQI_computed_lag_{lag}h'] = aqi_history[-lag]
@@ -232,35 +246,32 @@ def forecast_next_hours(model, scaler, feature_names, df, hours=72):
             features[f'AQI_computed_rolling_max_{window}h'] = stats['max']
             features[f'AQI_computed_rolling_min_{window}h'] = stats['min']
         
-        # Create feature vector in correct order
+        # Predict
         X = np.array([[features.get(f, 0) for f in feature_names]])
-        
-        # Scale and predict
         X_scaled = scaler.transform(X)
         predicted_aqi = model.predict(X_scaled)[0]
         
-        # Post-process: Apply explicit diurnal variation and noise to prevent flatlining
-        # (The ML model alone might be too stable/conservative)
         predicted_aqi = predicted_aqi * pollution_factor * (1.0 + np.random.uniform(-0.02, 0.02))
-        
-        # Clip to valid AQI range
         predicted_aqi = np.clip(predicted_aqi, 0, 500)
         
-        # Update AQI history for next prediction
+        # Update history
         aqi_history.append(predicted_aqi)
-        if len(aqi_history) > 48:  # Keep last 48 hours
+        if len(aqi_history) > 48:
             aqi_history.pop(0)
-        
-        # Get category
-        category, color = get_aqi_category(predicted_aqi)
-        
-        forecasts.append({
-            'datetime': future_dt,
-            'hour': int(h),
-            'predicted_aqi': float(predicted_aqi),
-            'category': str(category)
-        })
-    
+            
+        # Only add to output if this time is in the future relative to NOW
+        # (or at least close to now, e.g. within last hour)
+        if sim_dt >= start_time_limit - timedelta(minutes=59):
+            category, color = get_aqi_category(predicted_aqi)
+            
+            forecasts.append({
+                'datetime': sim_dt,
+                'hour': int(generated_count + 1),
+                'predicted_aqi': float(predicted_aqi),
+                'category': str(category)
+            })
+            generated_count += 1
+            
     return forecasts
 
 

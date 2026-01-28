@@ -1,0 +1,32 @@
+[
+  {
+    "source": "Vehicular",
+    "percentage": 55,
+    "icon": "\ud83d\ude97",
+    "color": "#f59e0b"
+  },
+  {
+    "source": "Burning",
+    "percentage": 33,
+    "icon": "\ud83d\udd25",
+    "color": "#dc2626"
+  },
+  {
+    "source": "Industrial",
+    "percentage": 8,
+    "icon": "\ud83c\udfed",
+    "color": "#ef4444"
+  },
+  {
+    "source": "Other",
+    "percentage": 4,
+    "icon": "\ud83c\udf3e",
+    "color": "#94a3b8"
+  },
+  {
+    "source": "Construction",
+    "percentage": 0,
+    "icon": "\ud83c\udfd7\ufe0f",
+    "color": "#f97316"
+  }
+]

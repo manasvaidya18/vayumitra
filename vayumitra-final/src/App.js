@@ -24,20 +24,17 @@ import CitySelector from "./citizen/pages/CitySelector";
 import Dashboard from "./citizen/pages/Dashboard";
 import TreeImpact from "./citizen/pages/TreeImpact";
 import Wildlife from "./citizen/pages/Wildlife";
-import Chatbot from "./citizen/pages/Chatbot";
 import GreenSuggestionsPage from "./citizen/pages/GreenSuggestionsPage";
 import About from "./citizen/pages/About";
 import Contact from "./citizen/pages/Contact";
+import LandingPage from "./pages/LandingPage"
 
 
 
 const App = () => {
   return (
     <Routes>
-
-      {/* AUTH */}
-      {/* AUTH */}
-      <Route path="/auth" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/unauthorized" element={<h2>Unauthorized</h2>} />
@@ -57,7 +54,6 @@ const App = () => {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="tree-impact" element={<TreeImpact />} />
         <Route path="wildlife" element={<Wildlife />} />
-        <Route path="chatbot" element={<Chatbot />} />
         <Route path="green-suggestions" element={<GreenSuggestionsPage />} />
         <Route path="about" element={<About />} />
         <Route path="contact" element={<Contact />} />
@@ -85,7 +81,7 @@ const App = () => {
         <Route path="reports-exports" element={<ReportsExports />} />
       </Route>
 
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
 
     </Routes>
   );

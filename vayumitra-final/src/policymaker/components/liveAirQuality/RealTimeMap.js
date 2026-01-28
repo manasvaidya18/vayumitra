@@ -1,75 +1,87 @@
 import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import { fetchSensors } from '../../../api/services';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
-const RealTimeMap = () => {
+// Fix leafleft icon
+delete L.Icon.Default.prototype._getIconUrl;
+try {
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+    iconUrl: require('leaflet/dist/images/marker-icon.png'),
+    shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+  });
+} catch (e) {
+  console.warn("Leaflet icons require fix failed", e);
+}
+
+const RealTimeMap = ({ selectedStation }) => {
   const [sensors, setSensors] = useState([]);
+  const [mapCenter, setMapCenter] = useState([28.6139, 77.2090]); // Delhi center
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const data = await fetchSensors();
-        setSensors(data);
+        if (data && data.length > 0) {
+          const filtered = data.filter(s => s.lat && s.lng);
+          setSensors(filtered);
+
+          // If station selected, find it and center
+          if (selectedStation && selectedStation !== 'All Stations') {
+            const target = filtered.find(s => s.id === selectedStation);
+            if (target) {
+              setMapCenter([target.lat, target.lng]);
+            }
+          } else {
+            setMapCenter([28.6139, 77.2090]);
+          }
+        }
       } catch (error) {
         console.error("Error loading sensors for map:", error);
       }
     };
     loadData();
-  }, []);
+  }, [selectedStation]);
 
-  if (!sensors.length) return <Card>Loading map data...</Card>;
+  // Custom component to update map view
+  const MapUpdater = ({ center }) => {
+    const map = useMap();
+    map.setView(center, selectedStation && selectedStation !== 'All Stations' ? 14 : 11);
+    return null;
+  };
 
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">📍 Real-Time City Map</h2>
-
-      {/* Map Container */}
-      <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-8 h-96 border-2 border-indigo-100">
-        <div className="grid grid-cols-4 gap-6 h-full">
-          {sensors.map((sensor) => (
-            <div
-              key={sensor.id}
-              className="flex items-center justify-center"
-            >
-              <div className="text-center">
-                <div
-                  className={`map-marker ${sensor.aqi > 200 ? 'bg-red-500' :
-                      sensor.aqi > 150 ? 'bg-orange-500' :
-                        sensor.aqi > 100 ? 'bg-yellow-500' :
-                          'bg-green-500'
-                    } hover:scale-110 transition-transform cursor-pointer`}
-                  title={`${sensor.location}`}
-                >
-                  {sensor.aqi}
+      <div className="h-96 rounded-lg overflow-hidden border-2 border-indigo-100 z-0">
+        <MapContainer center={mapCenter} zoom={11} style={{ height: '100%', width: '100%' }}>
+          <MapUpdater center={mapCenter} />
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          {sensors.map((s, idx) => (
+            <Marker key={idx} position={[s.lat, s.lng]}>
+              <Popup>
+                <div className="text-center">
+                  <h3 className="font-bold">{s.id}</h3>
+                  <div className="text-lg font-bold" style={{
+                    color: s.aqi > 200 ? '#ef4444' : s.aqi > 100 ? '#f97316' : '#22c55e'
+                  }}>
+                    AQI: {s.aqi}
+                  </div>
+                  <div className="text-xs text-slate-600 mt-1">
+                    <div>PM2.5: {s.pm25}</div>
+                    <div>PM10: {s.pm10}</div>
+                  </div>
                 </div>
-                <p className="text-xs text-slate-600 mt-1 font-medium">{sensor.id}</p>
-              </div>
-            </div>
+              </Popup>
+            </Marker>
           ))}
-        </div>
-
-        {/* Legend */}
-        <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg p-3">
-          <p className="text-xs font-semibold text-slate-700 mb-2">Legend</p>
-          <div className="space-y-1 text-xs">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span>Good (0-50)</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-              <span>Moderate (51-100)</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-              <span>Unhealthy (101-200)</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-              <span>Hazardous (200+)</span>
-            </div>
-          </div>
-        </div>
+        </MapContainer>
       </div>
     </Card>
   );

@@ -2,10 +2,11 @@ import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 import ChatBot from "./ChatBot";
+import { CityProvider } from "../../../context/CityContext";
 
 const PageLayout = () => {
   return (
-    <>
+    <CityProvider>
       {/* Sidebar (fixed) */}
       <Sidebar isOpen={true} />
 
@@ -19,7 +20,7 @@ const PageLayout = () => {
         </div>
       </main>
       <ChatBot />
-    </>
+    </CityProvider>
   );
 };
 

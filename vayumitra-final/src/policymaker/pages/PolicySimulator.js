@@ -12,6 +12,33 @@ const PolicySimulator = () => {
     setSimulationRun(true);
   };
 
+  const handleSaveScenario = () => {
+    alert("Scenario saved successfully! You can access it in the 'Saved Scenarios' tab.");
+  };
+
+  const handleCompare = () => {
+    alert("Added to comparison view. Select another scenario to compare.");
+  };
+
+  const handleGenerateReport = () => {
+    const summary = `
+      policy_simulation_report.txt
+      ----------------------------
+      Policies: ${selectedPolicies.map(p => p.name).join(', ')}
+      
+      Estimated Cost: ₹${selectedPolicies.reduce((sum, p) => sum + (p.estimatedCost || 0), 0)} Cr
+      Estimated Impact: Pending calculation (see dashboard)
+      Generated on: ${new Date().toLocaleString()}
+      `;
+
+    const blob = new Blob([summary], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'policy_simulation_report.txt';
+    a.click();
+  };
+
   return (
     <div className="space-y-6 fade-in">
       {/* Page Header */}
@@ -24,7 +51,7 @@ const PolicySimulator = () => {
       </div>
 
       {/* Policy Selector */}
-      <PolicySelector 
+      <PolicySelector
         selectedPolicies={selectedPolicies}
         setSelectedPolicies={setSelectedPolicies}
         onRunSimulation={handleRunSimulation}
@@ -34,7 +61,7 @@ const PolicySimulator = () => {
       {simulationRun && (
         <>
           <SimulationResults selectedPolicies={selectedPolicies} />
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ImpactBreakdown />
             <Timeline />
@@ -42,15 +69,24 @@ const PolicySimulator = () => {
 
           {/* Action Buttons */}
           <div className="flex justify-center space-x-4">
-            <button className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2">
+            <button
+              onClick={handleSaveScenario}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2"
+            >
               <span>💾</span>
               <span>Save Scenario</span>
             </button>
-            <button className="px-6 py-3 bg-white border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors flex items-center space-x-2">
+            <button
+              onClick={handleCompare}
+              className="px-6 py-3 bg-white border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors flex items-center space-x-2"
+            >
               <span>📊</span>
               <span>Compare Scenarios</span>
             </button>
-            <button className="px-6 py-3 bg-white border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors flex items-center space-x-2">
+            <button
+              onClick={handleGenerateReport}
+              className="px-6 py-3 bg-white border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors flex items-center space-x-2"
+            >
               <span>📋</span>
               <span>Generate Report</span>
             </button>

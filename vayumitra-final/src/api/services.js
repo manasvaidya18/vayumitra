@@ -163,3 +163,33 @@ export const fetchMLForecast = async () => {
     if (!res.ok) throw new Error('Failed to fetch ML forecast');
     return res.json();
 };
+
+export const fetchDashboardStats = async () => {
+    try {
+        const res = await fetch('/data/dashboard_stats.json');
+        if (!res.ok) throw new Error('Stats not found');
+        return await res.json();
+    } catch (e) {
+        return null;
+    }
+};
+
+export const fetchCityForecast = async () => {
+    try {
+        const res = await fetch('/data/city_forecast_72h.json');
+        if (!res.ok) throw new Error('Forecast not found');
+        return await res.json();
+    } catch (e) {
+        return [];
+    }
+};
+
+export const fetchStationForecasts = async () => {
+    try {
+        const res = await fetch('/data/station_forecasts.json');
+        if (!res.ok) throw new Error('Station forecasts not found');
+        return await res.json();
+    } catch (e) {
+        return [];
+    }
+};

@@ -36,33 +36,41 @@ export const ALERT_LEVELS = {
   CRITICAL: { label: 'Critical', color: '#7f1d1d', icon: '⚫' }
 };
 
-// Policy Categories
+// Policy Categories with Formula-Based Parameters
+// Policy Categories with User-Provided Evidence Data
 export const POLICY_CATEGORIES = {
   TRAFFIC: {
-    name: 'Traffic Measures',
+    name: 'Traffic & Transport',
     icon: '🚗',
     policies: [
-      { id: 'odd-even', name: 'Odd-Even Rule', impact: -15 },
-      { id: 'congestion-pricing', name: 'Congestion Pricing', impact: -12 },
-      { id: 'diesel-ban', name: 'Diesel Ban', impact: -25 },
-      { id: 'ev-incentives', name: 'EV Incentives', impact: -8 }
+      { id: 'odd-even', name: 'Odd-Even Restriction', targetSource: 'Vehicular', efficiency: 0.15, impact: -8.5, estimatedCost: 50, implementationTime: 0.1 }, // 5-12% (Avg 8.5)
+      { id: 'congestion-pricing', name: 'Congestion Pricing', targetSource: 'Vehicular', efficiency: 0.20, impact: -15, estimatedCost: 150, implementationTime: 9 }, // 10-20% (Avg 15)
+      { id: 'ev-transport', name: 'EV Public Transport', targetSource: 'Vehicular', efficiency: 0.15, impact: -11.5, estimatedCost: 1200, implementationTime: 36 } // 8-15% (Avg 11.5)
     ]
   },
   INDUSTRIAL: {
-    name: 'Industrial Measures',
+    name: 'Industrial & Energy',
     icon: '🏭',
     policies: [
-      { id: 'emission-caps', name: 'Emission Caps', impact: -20 },
-      { id: 'factory-relocation', name: 'Factory Relocation', impact: -35 },
-      { id: 'clean-tech', name: 'Clean Tech Mandate', impact: -15 }
+      { id: 'emission-retrofits', name: 'Emission Control Retrofits', targetSource: 'Industrial', efficiency: 0.30, impact: -14, estimatedCost: 500, implementationTime: 24 }, // 8-20% (Avg 14)
+      { id: 'brick-kilns', name: 'Brick Kiln Modernization', targetSource: 'Industrial', efficiency: 0.40, impact: -12.5, estimatedCost: 100, implementationTime: 9 }, // 10-15% (Avg 12.5)
+      { id: 'relocation', name: 'Industrial Relocation', targetSource: 'Industrial', efficiency: 0.10, impact: -7.5, estimatedCost: 3000, implementationTime: 60 } // 5-10% (Avg 7.5)
     ]
   },
-  GREEN: {
-    name: 'Green Measures',
-    icon: '🌳',
+  DUST: {
+    name: 'Dust & Urban Surface',
+    icon: '🏗️',
     policies: [
-      { id: 'urban-forestry', name: 'Urban Forestry', impact: -5 },
-      { id: 'green-corridors', name: 'Green Corridors', impact: -10 }
+      { id: 'dust-control', name: 'Construction Dust Control', targetSource: 'Construction', efficiency: 0.20, impact: -5, estimatedCost: 20, implementationTime: 0.5 }, // 10-20% PM10 -> ~5% AQI
+      { id: 'mech-sweeping', name: 'Mechanical Sweeping', targetSource: 'Construction', efficiency: 0.10, impact: -3, estimatedCost: 200, implementationTime: 1 }, // 5-10% PM10 -> ~3% AQI
+      { id: 'urban-greening', name: 'Urban Greening (Buffers)', targetSource: 'Other', efficiency: 0.05, impact: -3.5, estimatedCost: 80, implementationTime: 36 } // 2-5% (Avg 3.5)
+    ]
+  },
+  AGRICULTURE: {
+    name: 'Agriculture & Regional',
+    icon: '🔥',
+    policies: [
+      { id: 'stubble-control', name: 'Stubble Burning Control', targetSource: 'Burning', efficiency: 0.60, impact: -30, estimatedCost: 400, implementationTime: 6 } // 20-40% (Peak Season Avg 30)
     ]
   }
 };

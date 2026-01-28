@@ -3,23 +3,32 @@ import { createContext, useContext, useState } from "react";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  // Initialize user from localStorage if available
   const [user, setUser] = useState(() => {
-    // Restore user from localStorage if available
-    const savedToken = localStorage.getItem("token");
-    const savedRole = localStorage.getItem("role");
-    return savedToken ? { role: savedRole, token: savedToken } : null;
+    try {
+      const storedUser = localStorage.getItem("user");
+      return storedUser ? JSON.parse(storedUser) : { role: "citizen" };
+    } catch (error) {
+      console.error("Failed to parse user from localStorage", error);
+      return { role: "citizen" };
+    }
   });
 
-  const login = (role, token) => {
-    localStorage.setItem("token", token);
-    localStorage.setItem("role", role);
-    setUser({ role, token });
+  const login = (userData) => {
+    // userData could be just role or full object. Let's normalize.
+    // Based on usage, it seems like we might just be passing 'role' string in some places, 
+    // but better to expect an object or handle both.
+    // If userData is string, treat as role.
+    const newUser = typeof userData === 'string' ? { role: userData } : userData;
+
+    setUser(newUser);
+    localStorage.setItem("user", JSON.stringify(newUser));
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
     setUser(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("token"); // Also clear token if we store it separately
   };
 
   return (

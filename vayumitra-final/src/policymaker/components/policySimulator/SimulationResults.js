@@ -1,19 +1,47 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import { calculatePolicyImpact } from '../../utils/helpers';
 
 const SimulationResults = ({ selectedPolicies }) => {
-  const currentAQI = 178;
-  const { newAQI, totalImpact, percentageChange } = calculatePolicyImpact(selectedPolicies, currentAQI);
-  
-  const implementationCost = 450; // Crores
-  const healthBenefits = 1200; // Crores
-  const roi = (healthBenefits / implementationCost).toFixed(1);
+  const [currentAQI, setCurrentAQI] = useState(178); // Default fallback
+  const [sourceBreakdown, setSourceBreakdown] = useState(null);
+
+  useEffect(() => {
+    // Fetch real live data to base the simulation on
+    const fetchData = async () => {
+      try {
+        const res = await fetch('/data/dashboard_stats.json');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.live_aqi) setCurrentAQI(data.live_aqi);
+
+          // We prefer the breakdowns from source_attribution.json if available as they are normalized array
+          const srcRes = await fetch('/data/source_attribution.json');
+          if (srcRes.ok) {
+            setSourceBreakdown(await srcRes.json());
+          } else if (data.live_breakdown) {
+            // Fallback to stats object (needs normalization)
+            // But source_attribution.json is best match for our helper
+          }
+        }
+      } catch (e) {
+        console.error("Simulation data fetch failed", e);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const { newAQI, totalImpact, percentageChange } = calculatePolicyImpact(selectedPolicies, currentAQI, sourceBreakdown);
+
+  // Calculate dynamic cost and ROI
+  const implementationCost = selectedPolicies.reduce((sum, p) => sum + (p.estimatedCost || 0), 0);
+  const healthBenefits = Math.round(Math.abs(totalImpact) * 15); // Rough formula: 15 Cr per AQI point reduced
+  const roi = implementationCost > 0 ? (healthBenefits / implementationCost).toFixed(1) : 0;
 
   return (
     <Card gradient>
       <h2 className="text-xl font-bold text-slate-800 mb-4">📊 Simulation Results</h2>
-      
+
       <div className="space-y-6">
         {/* Projected Impact */}
         <div className="text-center py-6 bg-white rounded-lg border-2 border-indigo-200">

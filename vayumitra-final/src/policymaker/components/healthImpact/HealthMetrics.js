@@ -9,8 +9,25 @@ const HealthMetrics = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await fetchHealthData();
-        setHealthData(data);
+        // Fetch Live Station Data for calculation
+        const response = await fetch('/data/station_rankings.json');
+        if (response.ok) {
+          const stations = await response.json();
+
+          // Import model dynamically or use if imported at top (I'll add import below)
+          const { calculateHealthImpacts } = require('../../utils/health_impact_model');
+
+          const impact = calculateHealthImpacts(stations);
+          if (impact && impact.cityTotal) {
+            setHealthData({
+              respiratory: impact.cityTotal.cases * 0.45, // approx share
+              cardiac: impact.cityTotal.cases * 0.35,
+              asthma: impact.cityTotal.cases * 0.20,
+              total: impact.cityTotal.cases,
+              cost: impact.cityTotal.formattedCost
+            });
+          }
+        }
       } catch (error) {
         console.error("Error loading health metrics:", error);
       }
@@ -18,46 +35,38 @@ const HealthMetrics = () => {
     loadData();
   }, []);
 
-  if (!healthData) return <div className="p-4 text-center">Loading health metrics...</div>;
+  if (!healthData) return <div className="p-4 text-center">Loading health impact estimates...</div>;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <StatCard
-        title="🫁 Respiratory Cases"
-        value={formatNumber(healthData.respiratoryCases)}
-        subtitle="Annual cases"
-        trend={`${healthData.trends.respiratory}%`}
+        title="🫁 Est. Respiratory Cases"
+        value={formatNumber(Math.round(healthData.respiratory))}
+        subtitle="Daily excess cases"
+        trend="High"
         trendDirection="up"
         color="red"
       />
       <StatCard
-        title="❤️ Cardiovascular Cases"
-        value={formatNumber(healthData.cardiovascularCases)}
-        subtitle="Annual cases"
-        trend={`${healthData.trends.cardiovascular}%`}
+        title="❤️ Est. Cardiac Events"
+        value={formatNumber(Math.round(healthData.cardiac))}
+        subtitle="Daily excess risk"
+        trend="High"
         trendDirection="up"
         color="orange"
       />
       <StatCard
-        title="🏥 ER Visits"
-        value={formatNumber(healthData.erVisits)}
-        subtitle="This month"
-        trend={`${healthData.trends.erVisits}%`}
+        title="🏥 Asthma ER Visits"
+        value={formatNumber(Math.round(healthData.asthma))}
+        subtitle="Daily excess visits"
+        trend="Severe"
         trendDirection="up"
         color="orange"
       />
       <StatCard
-        title="💀 Deaths Attributed"
-        value={formatNumber(healthData.deaths)}
-        subtitle="Annual deaths"
-        trend={`${healthData.trends.deaths}%`}
-        trendDirection="up"
-        color="red"
-      />
-      <StatCard
-        title="💰 Economic Cost"
-        value={formatCurrency(healthData.annualCost)}
-        subtitle="Annual burden"
+        title="💰 Est. Economic Loss"
+        value={healthData.cost}
+        subtitle="Daily burden (medical + lost productivity)"
         color="red"
       />
     </div>

@@ -10,7 +10,7 @@ const Home = () => {
     { icon: LayoutDashboard, title: 'Real-Time Dashboard', description: 'Monitor AQI and air quality metrics in real-time', link: '/citizen/city-selector', color: 'indigo' },
     { icon: Trees, title: 'Tree Impact Simulator', description: 'Visualize how trees improve air quality', link: '/citizen/tree-impact', color: 'green' },
     { icon: Bird, title: 'Wildlife Monitoring', description: 'Track pollution impact on local species', link: '/citizen/wildlife', color: 'blue' },
-    { icon: MessageCircle, title: 'AI Chatbot', description: 'Get instant answers about air quality', link: '/citizen/chatbot', color: 'purple' },
+    // { icon: MessageCircle, title: 'AI Chatbot', description: 'Get instant answers about air quality', link: '/citizen/chatbot', color: 'purple' },
     { icon: Lightbulb, title: 'Green Suggestions', description: 'AI-powered recommendations for cleaner air', link: '/citizen/green-suggestions', color: 'yellow' },
     { icon: Shield, title: 'Health Risk Prediction', description: 'Personalized health risk assessment', link: '/citizen/city-selector', color: 'red' },
   ];
@@ -80,11 +80,11 @@ const Home = () => {
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
-            <Link to="/citizen/chatbot">
+            {/* <Link to="/citizen/chatbot">
               <Button variant="secondary" icon={MessageCircle}>
                 Talk to AI Assistant
               </Button>
-            </Link>
+            </Link> */}
           </motion.div>
         </div>
       </section>
