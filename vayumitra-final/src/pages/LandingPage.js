@@ -2,14 +2,13 @@ import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 const LandingPage = () => {
-  const navigate=useNavigate();
+  const navigate = useNavigate();
   const [hoveredCard, setHoveredCard] = useState(null);
   const [spawnedBubbles, setSpawnedBubbles] = useState([]);
   const [bubbleClickCounts, setBubbleClickCounts] = useState({});
 
-  const handleNavigation = (path) => {
-    // In your actual app, this would use navigate(path)
-    navigate(`${path}`);
+  const handleNavigation = (path, role = null) => {
+    navigate(path, { state: { role } });
   };
 
   const handleSectionClick = useCallback((e) => {
@@ -18,7 +17,7 @@ const LandingPage = () => {
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      
+
       // Random pollutant for spawned bubbles
       const pollutants = ['PM2.5', 'PM10', 'NO₂', 'SO₂', 'O₃'];
       const pollutant = pollutants[Math.floor(Math.random() * pollutants.length)];
@@ -38,7 +37,7 @@ const LandingPage = () => {
       const timestamp = Date.now();
       const newBubbles = Array.from({ length: spawnCount }, (_, i) => {
         const angle = (Math.PI * 2 * i) / spawnCount + Math.random() * 0.3;
-        
+
         return {
           id: `spawn-${timestamp}-${i}`,
           x: x,
@@ -55,7 +54,7 @@ const LandingPage = () => {
 
       // Remove bubbles after animation completes
       setTimeout(() => {
-        setSpawnedBubbles(prev => 
+        setSpawnedBubbles(prev =>
           prev.filter(bubble => !bubble.id.startsWith(`spawn-${timestamp}`))
         );
       }, 1800);
@@ -76,13 +75,13 @@ const LandingPage = () => {
             </span>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
-            <button 
+            <button
               onClick={() => handleNavigation("/login")}
               className="text-gray-700 hover:text-gray-900 font-medium px-3 md:px-5 py-2 rounded-lg hover:bg-gray-100 transition-all"
             >
               Login
             </button>
-            <button 
+            <button
               onClick={() => handleNavigation("/signup")}
               className="bg-gradient-to-r from-emerald-600 to-indigo-600 text-white px-4 md:px-6 py-2 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all"
             >
@@ -93,7 +92,7 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section */}
-      <section 
+      <section
         className="pt-32 pb-20 px-6 relative overflow-hidden cursor-crosshair"
         onClick={handleSectionClick}
       >
@@ -113,7 +112,7 @@ const LandingPage = () => {
             const color = colors[pollutant];
             const size = 50 + Math.random() * 40;
             const bubbleId = `bubble-${i}`;
-            
+
             return (
               <div
                 key={i}
@@ -163,25 +162,25 @@ const LandingPage = () => {
             <span className="text-lg">🌍</span>
             AI-Powered Urban Air Quality Intelligence
           </div>
-          
+
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 leading-tight">
             VayuMitra
           </h1>
-          
+
           <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Helping <span className="font-semibold text-emerald-600">citizens breathe safer</span> and <span className="font-semibold text-indigo-600">governments make data-driven</span> environmental decisions.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8 pointer-events-auto">
-            <button 
-              onClick={() => handleNavigation("/signup")}
+            <button
+              onClick={() => handleNavigation("/signup", "citizen")}
               className="group px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2"
             >
               <span className="text-2xl">🌱</span>
               Continue as Citizen
             </button>
-            <button 
-              onClick={() => handleNavigation("/signup")}
+            <button
+              onClick={() => handleNavigation("/signup", "policymaker")}
               className="group px-8 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2"
             >
               <span className="text-2xl">🏛️</span>
@@ -192,7 +191,7 @@ const LandingPage = () => {
           <div className="pt-4 pointer-events-auto">
             <p className="text-sm text-gray-500">
               Already have an account?{" "}
-              <button 
+              <button
                 onClick={() => handleNavigation("/login")}
                 className="text-indigo-600 hover:text-indigo-700 font-semibold underline"
               >
@@ -238,14 +237,14 @@ const LandingPage = () => {
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* Citizen Card */}
-            <div 
+            <div
               onMouseEnter={() => setHoveredCard('citizen')}
               onMouseLeave={() => setHoveredCard(null)}
               className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-8 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border-2 border-emerald-200"
             >
               <div className="text-5xl mb-4">🧍</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">For Citizens</h3>
-              
+
               <div className="space-y-4 mb-8">
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">📍</span>
@@ -277,8 +276,8 @@ const LandingPage = () => {
                 </div>
               </div>
 
-              <button 
-                onClick={() => handleNavigation("/signup")}
+              <button
+                onClick={() => handleNavigation("/signup", "citizen")}
                 className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
               >
                 👉 Explore Citizen Dashboard
@@ -286,14 +285,14 @@ const LandingPage = () => {
             </div>
 
             {/* Government Card */}
-            <div 
+            <div
               onMouseEnter={() => setHoveredCard('government')}
               onMouseLeave={() => setHoveredCard(null)}
               className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl p-8 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border-2 border-indigo-200"
             >
               <div className="text-5xl mb-4">🏛️</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">For Government Bodies</h3>
-              
+
               <div className="space-y-4 mb-8">
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">📊</span>
@@ -325,8 +324,8 @@ const LandingPage = () => {
                 </div>
               </div>
 
-              <button 
-                onClick={() => handleNavigation("/signup")}
+              <button
+                onClick={() => handleNavigation("/signup", "policymaker")}
                 className="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
               >
                 👉 Access Government Dashboard
@@ -385,14 +384,14 @@ const LandingPage = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-            <button 
-              onClick={() => handleNavigation("/signup")}
+            <button
+              onClick={() => handleNavigation("/signup", "citizen")}
               className="px-8 py-4 bg-white text-emerald-600 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all"
             >
               🌱 Continue as Citizen
             </button>
-            <button 
-              onClick={() => handleNavigation("/signup")}
+            <button
+              onClick={() => handleNavigation("/signup", "policymaker")}
               className="px-8 py-4 bg-white text-indigo-600 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all"
             >
               🏛️ Continue as Government
@@ -400,7 +399,7 @@ const LandingPage = () => {
           </div>
 
           <div className="pt-4">
-            <button 
+            <button
               onClick={() => handleNavigation("/login")}
               className="text-white hover:text-gray-200 font-semibold underline text-lg"
             >
@@ -439,7 +438,7 @@ const LandingPage = () => {
               <h4 className="text-white font-semibold mb-4">Get Started</h4>
               <ul className="space-y-2">
                 <li>
-                  <button 
+                  <button
                     onClick={() => handleNavigation("/signup")}
                     className="hover:text-white transition"
                   >
@@ -447,7 +446,7 @@ const LandingPage = () => {
                   </button>
                 </li>
                 <li>
-                  <button 
+                  <button
                     onClick={() => handleNavigation("/login")}
                     className="hover:text-white transition"
                   >

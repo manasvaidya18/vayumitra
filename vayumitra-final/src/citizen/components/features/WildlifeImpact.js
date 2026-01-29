@@ -4,15 +4,16 @@ import { motion } from 'framer-motion';
 import { Bug, Bird, TreeDeciduous, Info, Wind, AlertTriangle, Cloud, Sun, Leaf } from 'lucide-react';
 import { fetchCitizenWildlife } from '../../../api/services';
 
-const WildlifeImpact = () => {
+const WildlifeImpact = ({ city = "Delhi" }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedSpecies, setSelectedSpecies] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true); // Reset loading on city change
       try {
-        const result = await fetchCitizenWildlife();
+        const result = await fetchCitizenWildlife(city);
         setData(result);
       } catch (error) {
         console.error("Failed to load wildlife data", error);
@@ -21,7 +22,7 @@ const WildlifeImpact = () => {
       }
     };
     loadData();
-  }, []);
+  }, [city]);
 
   if (loading) return (
     <div className="flex justify-center items-center h-96">
@@ -79,7 +80,7 @@ const WildlifeImpact = () => {
               </div>
               <div className="px-4 py-1.5 bg-slate-50 text-slate-600 rounded-full text-sm font-medium flex items-center border border-slate-100">
                 <Wind className="w-4 h-4 mr-2" />
-                {data.location?.lat.toFixed(2)}°N, {data.location?.lon.toFixed(2)}°E
+                {city}, India (Real-time)
               </div>
             </div>
           </div>
@@ -123,9 +124,9 @@ const WildlifeImpact = () => {
               whileHover={{ y: -5 }}
               onClick={() => setSelectedSpecies(species)}
               className={`bg-white rounded-2xl p-6 shadow-sm border-2 cursor-pointer transition-all hover:shadow-lg hover:border-indigo-200 ${species.status === 'Critical' ? 'border-red-100' :
-                  species.status === 'Endangered' ? 'border-orange-100' :
-                    species.status === 'Vulnerable' ? 'border-yellow-100' :
-                      'border-green-100'
+                species.status === 'Endangered' ? 'border-orange-100' :
+                  species.status === 'Vulnerable' ? 'border-yellow-100' :
+                    'border-green-100'
                 }`}
             >
               <div className="flex justify-between items-start mb-4">

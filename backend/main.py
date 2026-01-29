@@ -12,7 +12,8 @@ from routes import auth, heatmap, citizen, chat, ml
 from policymaker_backend.routes import router as policymaker_router
 
 # Load Environment
-env_path = Path(__file__).parent / '.env'
+# Load Environment
+env_path = Path(__file__).resolve().parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
 # Initialize DB Tables

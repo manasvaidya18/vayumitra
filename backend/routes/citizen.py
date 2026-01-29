@@ -8,7 +8,7 @@ import pandas as pd
 from pydantic import BaseModel
 import asyncio
 from ml_engine.api_client import MultiSourceAPIClient
-from wildlife_config import SPECIES_CONFIG
+from wildlife_config import SPECIES_CONFIG, SAFE_LIMITS
 
 router = APIRouter()
 
@@ -380,10 +380,183 @@ async def get_citizen_shock_predictor(city: str = 'Delhi'):
 async def get_citizen_wildlife(city: str = 'Delhi'):
     try:
         df = await get_or_update_data(city)
-        return calculate_dynamic_wildlife(df)
+        return calculate_dynamic_wildlife(df, city)
     except Exception as e:
         print(f"Wildlife API Error: {e}")
         return getWildlifeData()
+
+def calculate_dynamic_wildlife(df, city_name):
+    # Fallback if no data
+    if df is None or len(df) == 0:
+        return getWildlifeData()
+    
+    # Get latest data
+    last_row = df.iloc[-1]
+    
+    # Extract pollutant values (ensure keys match what DataFrame has)
+    # df columns usually: PM2_5_ugm3, PM10_ugm3, NO2_ugm3, O3_ugm3, SO2_ugm3
+    current_pollutants = {
+        'pm2_5': float(last_row.get('PM2_5_ugm3', 0)),
+        'pm10': float(last_row.get('PM10_ugm3', 0)),
+        'no2': float(last_row.get('NO2_ugm3', 0)),
+        'o3': float(last_row.get('O3_ugm3', 0)),
+        'so2': float(last_row.get('SO2_ugm3', 0))
+    }
+    
+    # Determine Season (Basic based on month)
+    month = datetime.now().month
+    if 3 <= month <= 5: season = 'summer'
+    elif 6 <= month <= 9: season = 'monsoon' # Fallback to summer/autumn mix or define monsoon?
+    # Config uses: spring, summer, autumn, winter. Let's map roughly.
+    # India: Winter(Dec-Feb), Summer(Mar-May), Monsoon(Jun-Sep), Post-Monsoon(Oct-Nov)
+    if month in [12, 1, 2]: season = 'winter'
+    elif month in [3, 4, 5]: season = 'summer' # treating spring as early summer
+    elif month in [6, 7, 8, 9]: season = 'autumn' # Map monsoon to autumn constraint for now or use summer
+    else: season = 'autumn'
+
+    # Map 'spring' from config separately if needed, but for now:
+    # Let's map: 
+    # Feb-Mar -> Spring
+    # Apr-Jun -> Summer
+    # Jul-Sep -> Autumn (Monsoon)
+    # Oct-Jan -> Winter
+    if month in [2, 3]: season = 'spring'
+    elif month in [4, 5, 6]: season = 'summer'
+    elif month in [7, 8, 9]: season = 'autumn'
+    else: season = 'winter'
+    
+    # IMPACT_SCALING_FACTOR:
+    # The strictly requested formula is: Impact = (Val / Limit) * Sensitivity.
+    # However, if Pollution is 2x Limit and Sensitivity is 0.8: Impact = 1.6.
+    # Sum of 5 pollutants would be ~8.0.
+    # Health = Baseline * (1 - 8.0) = Negative.
+    # We apply a scaling factor of 0.1 (10%) to normalize the impact. 
+    # This means at Safe Limit, a high sensitivity species loses 10% health per pollutant.
+    IMPACT_SCALING_FACTOR = 0.1
+
+    print(f"\n--- Calculating Wildlife Health for {city_name} (Season: {season}) ---")
+    print(f"Pollutants: PM2.5={current_pollutants['pm2_5']}, NO2={current_pollutants['no2']}")
+    
+    processed_species = []
+    total_health = 0
+    
+    for species in SPECIES_CONFIG:
+        # Filter by city
+        # If 'cities' is not in config (backward compatibility), assume all. 
+        # But we added it, so strictly check.
+        if 'cities' in species and city_name not in species['cities']:
+            continue
+            
+        # Formula: health_index = baseline * (1 - sum(pollutant_impacts))
+        # Pollutant impact = (pollutant_value / safe_limit) * sensitivity_factor
+        
+        total_impact = 0
+        
+        # Calculate impact for each pollutant
+        for p_key, sensitivity in species['pollutant_sensitivity'].items():
+            val = current_pollutants.get(p_key, 0)
+            limit = SAFE_LIMITS.get(p_key, 60) # Default avoid div/0
+            
+            if limit > 0:
+                impact = (val / limit) * sensitivity
+                # Weight down the impact slightly so it doesn't drop to 0 too fast? 
+                # User formula implies direct subtraction. 
+                # impact often < 1, but if pollution is 3x limit, impact is 3 * sens (e.g. 0.8) = 2.4
+                # This would mean 1 - 2.4 = -1.4 -> Negative health.
+                # Let's cap impact sum or assume the formula meant a scaling factor.
+                # Formula: (Val / Limit) * Sensitivity * Scaling
+                raw_impact = (val / limit) * sensitivity
+                impact = raw_impact * IMPACT_SCALING_FACTOR
+                total_impact += impact
+                
+        # Seasonal variation
+        seasonal_factor = species['seasonal_variation'].get(season, 1.0)
+        
+        # Apply formula: Baseline * (1 - TotalImpact) * Seasonal
+        # Cap impact at 0.95 (95% reduction max)
+        health_index = species['baseline'] * (1 - min(total_impact, 0.95)) * seasonal_factor
+        
+        # Clamp to 0-100
+        health_index = max(0, min(100, health_index))
+        
+        # Determine Status
+        status_text = species['status'] # Default IUCN
+        risk_level = 'Low'
+        color = '#22c55e'
+        
+        if health_index < 50:
+            risk_level = 'Critical'
+            color = '#ef4444' # Red
+        elif health_index < 70:
+            risk_level = 'At Risk'
+            color = '#f97316' # Orange
+            
+        processed_species.append({
+            "id": species['id'],
+            "name": species['name'],
+            "icon": species['icon'],
+            "description": species['description'],
+            "healthScore": int(health_index),
+            "status": risk_level if risk_level != 'Low' else species['status'], # Show calculated risk if high, else IUCN
+            "original_status": species['status'],
+            "seasonalFactor": seasonal_factor,
+            "currentPollution": total_impact,
+            "color": color
+        })
+        
+        total_health += health_index
+
+    avg_health = total_health / len(SPECIES_CONFIG) if SPECIES_CONFIG else 0
+    
+    # Mitigation Strategies
+    # Find dominant pollutant
+    # Sort pollutants by value relative to limit
+    ratios = {k: current_pollutants[k]/SAFE_LIMITS[k] for k in current_pollutants if k in SAFE_LIMITS}
+    dominant = max(ratios, key=ratios.get) if ratios else 'pm2_5'
+    
+    mitigation_strategies = []
+    if dominant in ['pm2_5', 'pm10']:
+        mitigation_strategies = [
+            "Increase green corridors and vertical gardens to trap dust.",
+            "Implement water sprinkling on roads to suppress resuspended dust.",
+            "Restrict heavy vehicular movement during peak hours."
+        ]
+    elif dominant == 'no2':
+         mitigation_strategies = [
+            "Promote usage of CNG and electric vehicles.",
+            "Optimize traffic signal timing to reduce idling emissions.",
+            "Enhance public transport frequency."
+        ]
+    elif dominant == 'o3':
+         mitigation_strategies = [
+            "Regulate industrial volatile organic compound (VOC) emissions.",
+            "Schedule refueling of vehicles to evening hours.",
+            "Limit use of chemical solvents in open air."
+        ]
+    elif dominant == 'so2':
+         mitigation_strategies = [
+            "Mandate fuel switching in local industries to cleaner alternatives.",
+            "Enforce strict emission standards on power plants.",
+            "Install desulfurization units in nearby industrial zones."
+        ]
+    else:
+        mitigation_strategies = [
+            "Maintain general urban greenery.",
+            "Monitor pollution levels regularly."
+        ]
+
+    return {
+        "overallHealth": int(avg_health),
+        "season": season,
+        "location": {
+            "name": city_name,
+            "lat": 19.07 if city_name=='Mumbai' else (28.70 if city_name=='Delhi' else 18.52),
+            "lon": 72.87 if city_name=='Mumbai' else (77.10 if city_name=='Delhi' else 73.85)
+        },
+        "pollutants": current_pollutants,
+        "speciesData": processed_species,
+        "mitigation": mitigation_strategies
+    }
 
 @router.get("/tree-impact")
 async def get_citizen_tree_impact():

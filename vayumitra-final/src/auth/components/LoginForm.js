@@ -1,19 +1,68 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "./../AuthContext";
+import { useAuth } from "../AuthContext";
+import axios from "axios";
 
 const LoginForm = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (role) => {
-    login(role);
-    navigate(`/${role}`);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      // Create FormData for OAuth2PasswordRequestForm
+      const form = new FormData();
+      form.append("username", formData.email); // Backend expects 'username' field for email
+      form.append("password", formData.password);
+
+      const response = await axios.post(
+        "http://localhost:8000/auth/login",
+        form,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      // Store token and user info
+      localStorage.setItem("token", response.data.access_token);
+
+      // Decode JWT to get role (simple base64 decode of middle part)
+      const token = response.data.access_token;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const role = payload.role;
+
+      // Update auth state
+      login({ role });
+
+      // Navigate to appropriate dashboard
+      if (role === "citizen") {
+        navigate("/citizen/dashboard");
+      } else {
+        navigate("/policymaker/dashboard");
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.detail || "Login failed. Please check your credentials."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Email Input */}
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -23,8 +72,13 @@ const LoginForm = () => {
           </div>
           <input
             type="email"
+            value={formData.email}
+            onChange={(e) =>
+              setFormData({ ...formData, email: e.target.value })
+            }
             placeholder="Email Address"
             className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-gray-50 hover:bg-white"
+            required
           />
         </div>
 
@@ -37,30 +91,43 @@ const LoginForm = () => {
           </div>
           <input
             type="password"
+            value={formData.password}
+            onChange={(e) =>
+              setFormData({ ...formData, password: e.target.value })
+            }
             placeholder="Password"
             className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-gray-50 hover:bg-white"
+            required
           />
         </div>
-      </div>
 
-      <div className="space-y-3 pt-2">
-        <button
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
-          onClick={() => handleLogin("citizen")}
-        >
-          <span>🌿</span> Login as Citizen
-        </button>
+        {/* Forgot Password Link */}
+        <div className="text-right">
+          <span
+            onClick={() => navigate("/forgot-password")}
+            className="text-sm text-indigo-600 hover:text-indigo-700 font-semibold cursor-pointer hover:underline"
+          >
+            Forgot Password?
+          </span>
+        </div>
+
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+            {error}
+          </div>
+        )}
 
         <button
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
-          onClick={() => handleLogin("policymaker")}
+          type="submit"
+          disabled={loading}
+          className="w-full bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-700 hover:to-indigo-700 text-white font-medium py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span>🏛️</span> Login as Government Body
+          {loading ? "Logging in..." : "Login"}
         </button>
-      </div>
+      </form>
 
       <p className="text-sm text-center text-gray-600">
-        Don’t have an account?{" "}
+        Don't have an account?{" "}
         <span
           onClick={() => navigate("/signup")}
           className="text-emerald-600 font-semibold cursor-pointer hover:underline"

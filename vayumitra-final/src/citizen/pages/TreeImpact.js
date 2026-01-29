@@ -9,7 +9,7 @@ import { fetchCitizenAQI } from '../../api/services';
 const TreeImpact = () => {
   const [treeType, setTreeType] = useState('Neem');
   const [duration, setDuration] = useState('1 year');
-  const [location, setLocation] = useState('Pimpri, Maharashtra');
+  const [location, setLocation] = useState('Pune, Maharashtra');
   const [plantedTrees, setPlantedTrees] = useState([]);
   const [stats, setStats] = useState({});
   const [showAnimation, setShowAnimation] = useState(false);
@@ -20,10 +20,12 @@ const TreeImpact = () => {
     setPlantedTrees(prev => prev.filter(t => t.id !== treeId));
   };
 
+  // Update base AQI using real API data when location changes
   useEffect(() => {
     const getAQI = async () => {
       try {
-        const data = await fetchCitizenAQI();
+        const cityName = location.split(',')[0].trim(); // Extract city name e.g. "Pune"
+        const data = await fetchCitizenAQI(cityName);
         if (data && data.aqi) {
           setCurrentAQI(data.aqi);
         }
@@ -32,7 +34,7 @@ const TreeImpact = () => {
       }
     };
     getAQI();
-  }, []);
+  }, [location]);
 
   const treeTypes = [
     { name: 'Banyan', co2: 300, pm25: 0.25, o2: 400, emoji: '🌳', desc: 'Keystone species, massive carbon sink (approx. 300kg/yr).' },
@@ -54,12 +56,8 @@ const TreeImpact = () => {
   };
 
   const cities = [
-    { name: 'Pimpri, Maharashtra', coords: [18.6298, 73.7997], radius: 25 },
-    { name: 'Mumbai, Maharashtra', coords: [19.0760, 72.8777], radius: 30 },
     { name: 'Pune, Maharashtra', coords: [18.5204, 73.8567], radius: 25 },
-    { name: 'Delhi, Delhi', coords: [28.7041, 77.1025], radius: 35 },
-    { name: 'Bangalore, Karnataka', coords: [12.9716, 77.5946], radius: 25 },
-    { name: 'Hyderabad, Telangana', coords: [17.3850, 78.4867], radius: 30 }
+    { name: 'Delhi, Delhi', coords: [28.7041, 77.1025], radius: 35 }
   ];
 
   // Calculate stats whenever inputs change

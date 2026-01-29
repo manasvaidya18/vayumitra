@@ -2,6 +2,10 @@ import { Routes, Route } from "react-router-dom";
 import { Navigate } from "react-router-dom";
 import LoginPage from "./auth/pages/LoginPage";
 import SignupPage from "./auth/pages/SignupPage";
+import VerifyEmailPage from "./auth/pages/VerifyEmailPage";
+import CompleteSignupPage from "./auth/pages/CompleteSignupPage";
+import ForgotPasswordPage from "./auth/pages/ForgotPasswordPage";
+import ResetPasswordPage from "./auth/pages/ResetPasswordPage";
 import ProtectedRoute from "./auth/ProtectedRoute";
 
 // Citizen
@@ -37,6 +41,10 @@ const App = () => {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/complete-signup" element={<CompleteSignupPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       <Route path="/unauthorized" element={<h2>Unauthorized</h2>} />
 
       {/* CITIZEN */}

@@ -14,12 +14,8 @@ const GreenSuggestions = () => {
   }, [selectedCity]);
 
   const cities = [
-    { name: 'Pimpri, Maharashtra', coords: [18.6298, 73.7997] },
-    { name: 'Mumbai, Maharashtra', coords: [19.0760, 72.8777] },
     { name: 'Pune, Maharashtra', coords: [18.5204, 73.8567] },
-    { name: 'Delhi, Delhi', coords: [28.7041, 77.1025] },
-    { name: 'Bangalore, Karnataka', coords: [12.9716, 77.5946] },
-    { name: 'Hyderabad, Telangana', coords: [17.3850, 78.4867] }
+    { name: 'Delhi, Delhi', coords: [28.7041, 77.1025] }
   ];
 
   const iconMap = {

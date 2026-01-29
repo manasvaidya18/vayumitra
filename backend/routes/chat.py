@@ -6,8 +6,12 @@ import httpx
 router = APIRouter()
 
 # Nugen API configuration
-NUGEN_API_URL = "https://api.nugen.in/api/v3/agents/run-agents/air_buddy/run/"
-API_KEY = os.getenv("OPENAI_API_KEY") or os.getenv("NUGEN_API_KEY")
+# Nugen API configuration
+# Nugen API configuration
+NUGEN_API_URL = "https://api.nugen.in/api/v3/agents/run-agents/ai_r_aqi/run/"
+# HARDCODED FOR DEBUGGING
+#API_KEY = "nugen-VaLBPFlmqM5S-vp0KGjZfg"
+print(f"DEBUG: Chat module loaded. Key present? {bool(API_KEY)}", flush=True)
 
 class ChatRequest(BaseModel):
     message: str
@@ -51,7 +55,8 @@ async def chat_endpoint(request: ChatRequest):
     # 2. Try External API
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(NUGEN_API_URL, json=payload, headers=headers, timeout=10.0) 
+            response = await client.post(NUGEN_API_URL, json=payload, headers=headers, timeout=60.0) 
+            print(f"DEBUG: API Response Status: {response.status_code}", flush=True)
             response.raise_for_status()
             data = response.json()
             
@@ -61,11 +66,19 @@ async def chat_endpoint(request: ChatRequest):
                  ai_text = data["choices"][0].get("text", "").strip()
 
             if ai_text:
-                return ChatResponse(response=ai_text)
+                # Sanitize response: The model tends to hallucinate "user:" turns.
+                # Truncate at the first occurrence of "user:" or "User:"
+                for marker in ["user:", "User:", "USER:"]:
+                    if marker in ai_text:
+                        ai_text = ai_text.split(marker)[0]
+                
+                return ChatResponse(response=ai_text.strip())
             else:
                 return ChatResponse(response=get_static_response(request.message))
                 
         except Exception as e:
             # 3. Network/API Error Fallback
-            print(f"Chat API Error: {e}. Falling back to static.")
+            print(f"CRITICAL CHAT API ERROR: {type(e).__name__}: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
             return ChatResponse(response=get_static_response(request.message))
