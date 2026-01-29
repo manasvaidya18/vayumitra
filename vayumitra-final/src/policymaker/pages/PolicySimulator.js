@@ -69,7 +69,7 @@ const PolicySimulator = () => {
 
           {/* Action Buttons */}
           <div className="flex justify-center space-x-4">
-            <button
+            {/* <button
               onClick={handleSaveScenario}
               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2"
             >
@@ -82,7 +82,7 @@ const PolicySimulator = () => {
             >
               <span>📊</span>
               <span>Compare Scenarios</span>
-            </button>
+            </button> */}
             <button
               onClick={handleGenerateReport}
               className="px-6 py-3 bg-white border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors flex items-center space-x-2"

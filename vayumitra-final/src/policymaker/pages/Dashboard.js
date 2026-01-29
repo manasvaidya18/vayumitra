@@ -43,21 +43,18 @@ const Dashboard = () => {
       <AQIOverview city={city} />
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* City Map - Takes 2 columns */}
-        <div className="lg:col-span-2">
-          <BlockHeatmap
-            dataUrl={`/api/ml/forecast-3day?city=${city}`}
-            title={`${city} 72-Hour Prediction Matrix (Live AI)`}
-            city={city}
-          />
-        </div>
 
-        {/* Right Sidebar - Hotspots & Pollutants */}
-        <div className="lg:col-span-1 space-y-6">
-          <HotspotRankings city={city} />
-          <PollutantBreakdown city={city} />
-        </div>
+      <div className="lg:col-span-2">
+        <BlockHeatmap
+          dataUrl={`/api/ml/forecast-3day?city=${city}`}
+          title={`${city} 72-Hour Prediction Matrix (Live AI)`}
+          city={city}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <HotspotRankings city={city} />
+        <PollutantBreakdown city={city} />
       </div>
 
       {/* Weekly Trend and Recent Alerts */}
@@ -67,7 +64,7 @@ const Dashboard = () => {
       </div>
 
       {/* Quick Actions */}
-      <QuickActions />
+      {/* <QuickActions /> */}
     </div>
   );
 };

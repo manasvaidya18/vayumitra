@@ -136,12 +136,12 @@ const TrafficUrban = () => {
         <Button variant="primary" icon="📊" onClick={handleReport}>
           {loading && activeModal === 'report' ? 'Generating...' : 'Traffic Report'}
         </Button>
-        <Button variant="secondary" icon="🚦" onClick={handleInterventions}>
+        {/* <Button variant="secondary" icon="🚦" onClick={handleInterventions}>
           {loading && activeModal === 'interventions' ? 'Analyzing...' : 'Suggest Interventions'}
         </Button>
         <Button variant="secondary" icon="📈" onClick={() => window.scrollTo(0, 0)}>
           View Dashboard Trends
-        </Button>
+        </Button> */}
       </div>
 
       {/* --- MODALS --- */}

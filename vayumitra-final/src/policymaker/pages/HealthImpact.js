@@ -29,23 +29,24 @@ const HealthImpact = () => {
       {/* Vulnerable Populations and Zone Impact */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <VulnerablePopulations />
-        <ZoneWiseImpact />
+        {/* <ZoneWiseImpact /> */}
+        <DiseaseBreakdown />
       </div>
 
       {/* Disease Breakdown */}
-      <DiseaseBreakdown />
+
 
       {/* Action Buttons */}
       <div className="flex justify-center space-x-4">
         <Button variant="primary" icon="📋">
           Generate Health Report
         </Button>
-        <Button variant="secondary" icon="📢">
+        {/* <Button variant="secondary" icon="📢">
           Issue Health Advisory
         </Button>
         <Button variant="secondary" icon="📈">
           View Trends
-        </Button>
+        </Button> */}
       </div>
     </div>
   );

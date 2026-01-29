@@ -78,12 +78,12 @@ const Sidebar = ({ isOpen }) => {
       path: 'traffic-urban',
       description: 'Activity monitoring'
     },
-    {
-      title: 'Reports & Exports',
-      icon: '📋',
-      path: 'reports-exports',
-      description: 'Generate reports'
-    }
+    // {
+    //   title: 'Reports & Exports',
+    //   icon: '📋',
+    //   path: 'reports-exports',
+    //   description: 'Generate reports'
+    // }
   ];
 
   return (

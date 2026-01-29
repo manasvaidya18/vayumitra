@@ -6,7 +6,7 @@ const AlertConfiguration = () => {
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">📋 Alert Configuration</h2>
-      
+
       <div className="space-y-4">
         <div>
           <h3 className="text-sm font-semibold text-slate-700 mb-3">AQI Threshold Alerts:</h3>
@@ -42,7 +42,7 @@ const AlertConfiguration = () => {
           </div>
         </div>
 
-        <div>
+        {/* <div>
           <h3 className="text-sm font-semibold text-slate-700 mb-3">Notifications:</h3>
           <div className="space-y-2">
             <label className="flex items-center space-x-2">
@@ -58,16 +58,16 @@ const AlertConfiguration = () => {
               <span className="text-sm text-slate-700">App Notification</span>
             </label>
           </div>
-        </div>
+        </div> */}
 
-        <div className="flex space-x-2">
+        {/* <div className="flex space-x-2">
           <Button variant="secondary" className="flex-1" size="sm">
             Edit Rules
           </Button>
           <Button variant="primary" className="flex-1" size="sm">
             Add New
           </Button>
-        </div>
+        </div> */}
       </div>
     </Card>
   );
