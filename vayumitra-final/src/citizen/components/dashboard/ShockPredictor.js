@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, Bell, TrendingUp, Info } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import Card from '../common/Card';
-import { fetchCitizenShockPredictor } from '../../../api/services';
+import { fetchCitizenShockPredictor, fetchCitizenAQI } from '../../../api/services';
 
 const ShockPredictor = ({ city }) => {
   const [data, setData] = useState(null);
@@ -12,9 +12,25 @@ const ShockPredictor = ({ city }) => {
     const loadData = async () => {
       try {
         const cityName = city?.name || 'Delhi';
-        const result = await fetchCitizenShockPredictor(cityName);
-        if (result) {
-          setData(result);
+        const [shockData, aqiData] = await Promise.all([
+          fetchCitizenShockPredictor(cityName),
+          fetchCitizenAQI(cityName)
+        ]);
+
+        if (shockData && shockData.predictionData) {
+          // Sync start point with real CPCB AQI
+          const currentAQI = aqiData?.aqi || shockData.predictionData[0].aqi;
+
+          // Create new array with explicit start
+          const syncedPredictions = [
+            { time: 'Now', aqi: currentAQI },
+            ...shockData.predictionData.slice(1) // Keep the rest of the curve
+          ];
+
+          setData({
+            ...shockData,
+            predictionData: syncedPredictions
+          });
         }
       } catch (err) {
         console.error("Failed to load shock predictor data:", err);

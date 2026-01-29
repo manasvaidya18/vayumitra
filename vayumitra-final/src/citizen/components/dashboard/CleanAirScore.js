@@ -137,7 +137,7 @@ const CleanAirScore = ({ city }) => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="date" stroke="#64748b" style={{ fontSize: '12px' }} />
+                <XAxis dataKey="date" stroke="#64748b" style={{ fontSize: '12px' }} interval={0} />
                 <YAxis stroke="#64748b" style={{ fontSize: '12px' }} />
                 <Tooltip
                   contentStyle={{

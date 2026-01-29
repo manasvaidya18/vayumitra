@@ -51,7 +51,18 @@ const AQIPanel = ({ city }) => {
 
   const processForecastData = (forecastList, currentAQI) => {
     // 1. Hourly 24h
-    const hourly24 = forecastList.slice(0, 24).map(item => {
+    const now = new Date();
+    // Start of current hour (e.g. 9:21 -> 9:00)
+    const currentHour = new Date(now);
+    currentHour.setMinutes(0, 0, 0);
+
+    // Filter out past hours
+    const futureItems = forecastList.filter(item => new Date(item.datetime) >= currentHour);
+
+    const rawHourly = [];
+
+    // Future points from ML
+    const futureMapped = futureItems.map(item => {
       const d = new Date(item.datetime);
       const hourStr = d.getHours();
       const displayHour = hourStr === 0 ? '12 AM' : hourStr < 12 ? `${hourStr} AM` : hourStr === 12 ? '12 PM' : `${hourStr - 12} PM`;
@@ -61,6 +72,19 @@ const AQIPanel = ({ city }) => {
         hour: hourStr
       };
     });
+
+    // Force strict alignment: Prepend "Now" point with exact current AQI
+    rawHourly.push({
+      time: 'Now',
+      aqi: currentAQI,
+      hour: currentHour.getHours()
+    });
+
+    // Append future points
+    rawHourly.push(...futureMapped);
+
+    // Limit to 24 points
+    const hourly24 = rawHourly.slice(0, 24);
 
     // 2. Daily 3 Days (Sample every 6 hours approx or group)
     // The original mock had 4 slots per day: Morning, Afternoon, Evening, Night

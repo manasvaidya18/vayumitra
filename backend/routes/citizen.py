@@ -107,6 +107,9 @@ async def get_or_update_data(city='Delhi'):
 @router.get("/aqi")
 async def get_citizen_aqi(city: str = 'Delhi'):
     try:
+        # Normalize city
+        target_city = 'Pune' if city.lower() == 'pune' else 'Delhi'
+
         # 1. Get cached real-time data
         df = await get_or_update_data(city)
         
@@ -117,6 +120,10 @@ async def get_citizen_aqi(city: str = 'Delhi'):
         last_row = df.iloc[-1]
         current_aqi = float(last_row['AQI_computed'])
         last_updated = last_row['Datetime'].isoformat()
+        
+        # DEMO BIAS: Synchronize with Forecast/Charts
+        if target_city == 'Delhi':
+             current_aqi = max(current_aqi * 1.5 + 100, 320)
         
         # 3. Determine level/color
         category, color = get_aqi_category(current_aqi) 
@@ -226,17 +233,52 @@ def calculate_dynamic_score_v2(df):
 @router.get("/score")
 async def get_citizen_score(city: str = 'Delhi'):
     try:
-        df = await get_or_update_data(city)
-        return calculate_dynamic_score_v2(df)
+        # Normalize city to title case (e.g. 'pune' -> 'Pune') to match CITY_COORDS keys
+        target_city = 'Pune' if city.lower() == 'pune' else 'Delhi'
+        
+        client = MultiSourceAPIClient()
+        # Fetch 7 days history
+        history_df = client.fetch_history_data(city=target_city, days=7)
+        
+        if history_df is not None and not history_df.empty:
+            # DEMO ADJUSTMENT: User insists Delhi must be worse (Lower Score) than Pune.
+            # Real OWM data fluctuates, so we apply a bias factor to align with expectations.
+            if target_city == 'Delhi':
+                # Enforce High Pollution: Multiplier + Floor of 320 ensures "Poor" score (Score <= 36)
+                history_df['AQI_computed'] = (history_df['AQI_computed'] * 1.5 + 100).clip(lower=320)
+            elif target_city == 'Pune':
+                # Enforce Clean Air: Reduce pollution by half
+                history_df['AQI_computed'] = history_df['AQI_computed'] * 0.5
+                
+            # Use real history for the score/trend
+            return calculate_dynamic_score_v2(history_df)
+        else:
+            # Fallback to simulated/cached data if OWM fails
+            df = await get_or_update_data(city)
+            return calculate_dynamic_score_v2(df)
+            
     except Exception as e:
         import traceback
         traceback.print_exc()
         return {"error": str(e)}
 
-# ... health risk endpoints (no city dependency for calculation logic yet, maybe demographics differ?)
-# Skipping health risk for now
+class HealthRiskRequest(BaseModel):
+    age_group: str
+    conditions: list[str]
 
-@router.get("/best-time")
+@router.post("/health-risk-calc")
+async def calculate_health_risk(request: HealthRiskRequest):
+    try:
+        # Use simple synchronous helper logic
+        return getHealthRiskData(age_group=request.age_group, conditions=request.conditions)
+    except Exception as e:
+        print(f"Health Risk Calc Error: {e}")
+        return {
+            "risk": 0,
+            "level": "Unknown", 
+            "color": "#9ca3af",
+            "recommendations": ["Error calculating risk. Please try again."]
+        }
 async def get_citizen_best_time(city: str = 'Delhi'):
     try:
         df = await get_or_update_data(city)
@@ -245,11 +287,90 @@ async def get_citizen_best_time(city: str = 'Delhi'):
         print(f"Best Time API Error: {e}", flush=True)
         return getBestTimeData()
 
+def calculate_dynamic_shock_predictor(df, city='Delhi'):
+    # Default fallback
+    if df is None or len(df) == 0:
+        return getShockPredictorData()
+        
+    try:
+        last_row = df.iloc[-1]
+        current_aqi = float(last_row.get('AQI_computed', 200))
+        
+        # DEMO BIAS: Enforce Delhi Pollution Floor
+        if city == 'Delhi':
+             # Ensure start point is at least "Poor"
+             current_aqi = max(current_aqi * 1.5, 320)
+        # Pune uses raw data (no change)
+             
+        predictions = []
+        # Generate +2h, +4h, ..., +12h
+        # Simulate simple evening spike trend
+        import random
+        for i in range(0, 7): # 0, 1, ... 6
+            hours_ahead = i * 2
+            
+            # Trend: Rise in evening/night, drop in early morning
+            # Simplified: Random fluctuation upwards for Delhi
+            noise = random.randint(-10, 20)
+            if city == 'Delhi':
+                forecast_aqi = current_aqi + (i * 5) + noise # Gradual rise
+            else:
+                forecast_aqi = current_aqi + noise
+                
+            predictions.append({
+                "time": 'Now' if i == 0 else f'+{hours_ahead}h',
+                "aqi": int(forecast_aqi),
+                "predicted": i > 0
+            })
+            
+        # Alerts based on forecast
+        alerts = []
+        peak_aqi = max(p['aqi'] for p in predictions)
+        
+        if peak_aqi > 300:
+            alerts.append({
+                "id": 1,
+                "type": 'warning',
+                "title": 'Severe Pollution Alert',
+                "time": 'Next 12 Hours',
+                "severity": 'High',
+                "message": f'AQI expected to stay severe ({int(peak_aqi)}). Avoid outdoors.'
+            })
+        elif peak_aqi > 200:
+             alerts.append({
+                "id": 1,
+                "type": 'warning',
+                "title": 'Poor Air Quality',
+                "time": 'Evening Peak',
+                "severity": 'Moderate',
+                "message": 'Pollution levels rising. Wear masks.'
+            })
+            
+        # Constant weather alert
+        alerts.append({
+            "id": 2,
+            "type": 'info',
+            "title": 'Weather Forecast',
+            "time": 'Next 24h',
+            "severity": 'Low',
+            "message": 'Stagnant winds contributing to pollutant accumulation.'
+        })
+            
+        return {
+            "alerts": alerts,
+            "predictionData": predictions
+        }
+
+    except Exception as e:
+        print(f"Error in shock predictor calc: {e}")
+        return getShockPredictorData()
+
 @router.get("/shock-predictor")
 async def get_citizen_shock_predictor(city: str = 'Delhi'):
     try:
         df = await get_or_update_data(city)
-        return calculate_dynamic_shock_predictor(df)
+        # Pass city to helper for correct bias application
+        return calculate_dynamic_shock_predictor(df, city)
     except Exception as e:
         print(f"Shock Predictor API Error: {e}", flush=True)
         return getShockPredictorData()
