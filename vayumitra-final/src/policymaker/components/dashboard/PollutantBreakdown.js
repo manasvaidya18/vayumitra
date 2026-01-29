@@ -2,21 +2,31 @@
 import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 
-const PollutantBreakdown = () => {
+const PollutantBreakdown = ({ city = 'Delhi' }) => {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch('/data/dashboard_stats.json');
+        const res = await fetch(`/api/citizen/aqi?city=${city}`);
         if (res.ok) {
           const data = await res.json();
-          setStats(data.live_breakdown);
+          // Convert array from /api/citizen/aqi to object expected by component
+          // API returns: pollutants: [{name: 'PM2.5', value: 120}, ...]
+          // Component expects: { 'PM2.5': 120, 'PM10': ... }
+
+          if (data.pollutants && Array.isArray(data.pollutants)) {
+            const breakdown = {};
+            data.pollutants.forEach(p => {
+              breakdown[p.name] = p.value;
+            });
+            setStats(breakdown);
+          }
         }
       } catch (e) { console.error(e); }
     };
     fetchStats();
-  }, []);
+  }, [city]);
 
   if (!stats) return <Card>Loading Pollutants...</Card>;
 

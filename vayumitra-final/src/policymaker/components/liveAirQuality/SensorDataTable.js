@@ -4,14 +4,14 @@ import Button from '../common/Button';
 import { fetchSensors } from '../../../api/services';
 import { getAQIEmoji, getAQIColor, downloadCSV } from '../../utils/helpers';
 
-const SensorDataTable = ({ selectedStation, selectedPollutant }) => {
+const SensorDataTable = ({ selectedStation, selectedPollutant, city }) => {
   const [sensors, setSensors] = useState([]);
   const [viewAll, setViewAll] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await fetchSensors();
+        const data = await fetchSensors(city);
         let filtered = data;
 
         if (selectedStation && selectedStation !== 'All Stations') {
@@ -24,7 +24,7 @@ const SensorDataTable = ({ selectedStation, selectedPollutant }) => {
       }
     };
     loadData();
-  }, [selectedStation]); // Re-run when filter changes
+  }, [selectedStation, city]); // Re-run when filter changes
 
   const handleExport = () => {
     if (sensors.length > 0) {

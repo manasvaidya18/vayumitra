@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useCity as useGlobalCity } from '../../context/CityContext';
+
 import TrafficMetrics from '../components/traffic/TrafficMetrics';
 import TrafficDensityMap from '../components/traffic/TrafficDensityMap';
 import HourlyPattern from '../components/traffic/HourlyPattern';
@@ -9,7 +11,18 @@ import Modal from '../components/common/Modal';
 
 const TOMTOM_KEY = 'kuYZTwEyDCYpyi3s09ykbIM0NzKHGNn6';
 
+const CITY_COORDS = {
+  'Delhi': { lat: 28.6289, lng: 77.2409 }, // Central Delhi
+  'Mumbai': { lat: 19.0760, lng: 72.8777 },
+  'Bangalore': { lat: 12.9716, lng: 77.5946 },
+  'Hyderabad': { lat: 17.3850, lng: 78.4867 },
+  'Chennai': { lat: 13.0827, lng: 80.2707 },
+  'Kolkata': { lat: 22.5726, lng: 88.3639 },
+  'Pune': { lat: 18.5204, lng: 73.8567 }
+};
+
 const TrafficUrban = () => {
+  const { city } = useGlobalCity();
   const [activeModal, setActiveModal] = useState(null);
   const [modalData, setModalData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -18,7 +31,9 @@ const TrafficUrban = () => {
   const fetchSnapshot = async () => {
     setLoading(true);
     try {
-      const lat = 28.6289, lng = 77.2409;
+      const coords = CITY_COORDS[city] || CITY_COORDS['Delhi'];
+      const { lat, lng } = coords;
+
       const url = `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?key=${TOMTOM_KEY}&point=${lat},${lng}`;
       const res = await fetch(url);
       const json = await res.json();

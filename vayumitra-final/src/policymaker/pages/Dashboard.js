@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useCity } from '../../context/CityContext';
 import AQIOverview from '../components/dashboard/AQIOverview';
 import BlockHeatmap from '../components/dashboard/BlockHeatmap';
 import PollutantBreakdown from '../components/dashboard/PollutantBreakdown';
 import WeeklyTrend from '../components/dashboard/WeeklyTrend';
 import RecentAlerts from '../components/dashboard/RecentAlerts';
 import QuickActions from '../components/dashboard/QuickActions';
-import CitySelector from '../components/dashboard/CitySelector';
+// import CitySelector from '../components/dashboard/CitySelector'; // Removed if redundant or bind to context
 import HotspotRankings from '../components/dashboard/HotspotRankings';
 
 const Dashboard = () => {
-  const [city, setCity] = useState('Delhi');
+  const { city } = useCity(); // Use Global Context
 
   return (
     <div className="space-y-6 fade-in">
@@ -24,7 +25,12 @@ const Dashboard = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <CitySelector selectedCity={city} onCityChange={setCity} />
+          {/* City Selector is now in Navbar, but we can keep a display or remove it. 
+              The task is to make it global. If Navbar has it, we might not need it here.
+              However, the user might expect it. Let's rely on Navbar for switching to keep UI clean 
+              or if we want it here, we would use the component but redundant. 
+              Let's remove it to avoid confusion and rely on the global Navbar selector. 
+          */}
 
           <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg shadow-card">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -34,28 +40,29 @@ const Dashboard = () => {
       </div>
 
       {/* AQI Overview Cards */}
-      <AQIOverview />
+      <AQIOverview city={city} />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* City Map - Takes 2 columns */}
         <div className="lg:col-span-2">
           <BlockHeatmap
-            dataUrl="http://localhost:8000/api/ml/forecast-3day"
-            title="Delhi 72-Hour Prediction Matrix (Live AI)"
+            dataUrl={`/api/ml/forecast-3day?city=${city}`}
+            title={`${city} 72-Hour Prediction Matrix (Live AI)`}
+            city={city}
           />
         </div>
 
         {/* Right Sidebar - Hotspots & Pollutants */}
         <div className="lg:col-span-1 space-y-6">
-          <HotspotRankings />
-          <PollutantBreakdown />
+          <HotspotRankings city={city} />
+          <PollutantBreakdown city={city} />
         </div>
       </div>
 
       {/* Weekly Trend and Recent Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <WeeklyTrend />
+        <WeeklyTrend city={city} />
         <RecentAlerts />
       </div>
 

@@ -45,8 +45,47 @@ def load_model(city='Delhi'):
     scaler = joblib.load(scaler_path)
     feature_names = joblib.load(feature_path)
     
-    print(f'{city} Model loaded successfully!')
+    print(f'{city} Model loaded successfully! Path: {model_path}')
     return model, scaler, feature_names
+
+
+def fetch_and_merge_live_data(df, city='Delhi'):
+    """Fetch real-time data and append/merge with historical DF."""
+    if not MultiSourceAPIClient:
+        print("MultiSourceAPIClient not available.")
+        return df
+        
+    client = MultiSourceAPIClient()
+    # Fetch last 24h to ensure overlap/continuity
+    live_df = client.fetch_realtime_data(city=city, hours=24)
+    
+    if live_df is None or live_df.empty:
+        print("No live data fetched.")
+        return df
+        
+    # Ensure consistent columns
+    # Historical DF has: Datetime, PM2.5, PM10, NO2, CO, O3, SO2, Temp, Hum, Wind, AQI_computed
+    # Live DF has similar. 
+    # Map column names if needed or ensure client returns matching names.
+    # The client returns: 'Datetime', 'PM2_5_ugm3', 'PM10_ugm3', etc.
+    # Historical might correspond. Let's assume standard names.
+    
+    # Concatenate and de-duplicate
+    # 1. Normalize datetime
+    df['Datetime'] = pd.to_datetime(df['Datetime']).dt.tz_localize(None)
+    live_df['Datetime'] = pd.to_datetime(live_df['Datetime']).dt.tz_localize(None)
+    
+    # 2. Concat
+    merged = pd.concat([df, live_df], ignore_index=True)
+    
+    # 3. Sort
+    merged = merged.sort_values('Datetime')
+    
+    # 4. Drop duplicates by Datetime (keep last/live)
+    merged = merged.drop_duplicates(subset=['Datetime'], keep='last')
+    
+    print(f"Merged live data. New end: {merged['Datetime'].iloc[-1]}")
+    return merged
 
 
 def prepare_historical_data(city='Delhi'):

@@ -58,9 +58,7 @@ const Navbar = ({ toggleSidebar }) => {
                 className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5 shadow-sm"
               >
                 <option value="Delhi">📍 Delhi (NCR)</option>
-                <option value="Mumbai">📍 Mumbai</option>
-                <option value="Bangalore">📍 Bangalore</option>
-                <option value="Hyderabad">📍 Hyderabad</option>
+                <option value="Pune">📍 Pune</option>
               </select>
             </div>
           </div>

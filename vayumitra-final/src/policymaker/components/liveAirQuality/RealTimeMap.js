@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import { fetchSensors } from '../../../api/services';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -17,14 +17,22 @@ try {
   console.warn("Leaflet icons require fix failed", e);
 }
 
-const RealTimeMap = ({ selectedStation }) => {
+const RealTimeMap = ({ selectedStation, city }) => {
   const [sensors, setSensors] = useState([]);
-  const [mapCenter, setMapCenter] = useState([28.6139, 77.2090]); // Delhi center
+  const [mapCenter, setMapCenter] = useState([28.6139, 77.2090]); // Delhi default
+
+  // Coords helper
+  const getCityCoords = (c) => {
+    if (c === 'Pune') return [18.5204, 73.8567];
+    if (c === 'Mumbai') return [19.0760, 72.8777];
+    if (c === 'Bangalore') return [12.9716, 77.5946];
+    return [28.6139, 77.2090]; // Delhi
+  };
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await fetchSensors();
+        const data = await fetchSensors(city);
         if (data && data.length > 0) {
           const filtered = data.filter(s => s.lat && s.lng);
           setSensors(filtered);
@@ -36,7 +44,8 @@ const RealTimeMap = ({ selectedStation }) => {
               setMapCenter([target.lat, target.lng]);
             }
           } else {
-            setMapCenter([28.6139, 77.2090]);
+            // Center on City
+            setMapCenter(getCityCoords(city));
           }
         }
       } catch (error) {
@@ -44,7 +53,7 @@ const RealTimeMap = ({ selectedStation }) => {
       }
     };
     loadData();
-  }, [selectedStation]);
+  }, [selectedStation, city]);
 
   // Custom component to update map view
   const MapUpdater = ({ center }) => {
@@ -64,21 +73,21 @@ const RealTimeMap = ({ selectedStation }) => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           {sensors.map((s, idx) => (
-            <Marker key={idx} position={[s.lat, s.lng]}>
-              <Popup>
-                <div className="text-center">
-                  <h3 className="font-bold">{s.id}</h3>
-                  <div className="text-lg font-bold" style={{
+            <Marker key={idx} position={[s.lat || mapCenter[0], s.lng || mapCenter[1]]}>
+              <Tooltip direction="top" offset={[0, -20]} opacity={1}>
+                <div className="text-center p-2 min-w-[120px]">
+                  <h3 className="font-bold text-sm border-b pb-1 mb-1 border-slate-200">{s.id}</h3>
+                  <div className="text-xl font-bold" style={{
                     color: s.aqi > 200 ? '#ef4444' : s.aqi > 100 ? '#f97316' : '#22c55e'
                   }}>
                     AQI: {s.aqi}
                   </div>
-                  <div className="text-xs text-slate-600 mt-1">
-                    <div>PM2.5: {s.pm25}</div>
-                    <div>PM10: {s.pm10}</div>
+                  <div className="text-xs text-slate-600 mt-1 grid grid-cols-2 gap-x-2 text-left">
+                    <span>PM2.5: <b>{s.pm25}</b></span>
+                    <span>PM10: <b>{s.pm10}</b></span>
                   </div>
                 </div>
-              </Popup>
+              </Tooltip>
             </Marker>
           ))}
         </MapContainer>

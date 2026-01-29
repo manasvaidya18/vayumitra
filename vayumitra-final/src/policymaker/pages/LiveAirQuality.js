@@ -5,8 +5,10 @@ import SensorDataTable from '../components/liveAirQuality/SensorDataTable';
 import LiveTrendChart from '../components/liveAirQuality/LiveTrendChart';
 import PollutantComparison from '../components/liveAirQuality/PollutantComparison';
 import { fetchSensors } from '../../api/services';
+import { useCity as useGlobalCity } from '../../context/CityContext';
 
 const LiveAirQuality = () => {
+  const { city } = useGlobalCity(); // Global City
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   // Filters State
@@ -20,9 +22,12 @@ const LiveAirQuality = () => {
   useEffect(() => {
     const loadStations = async () => {
       try {
-        const data = await fetchSensors();
+        // Fetch sensors for the selected city
+        // We will update fetchSensors to accept city param
+        const data = await fetchSensors(city);
         if (data) {
-          // sort stations alphabetically
+          // Flatten if backend groups by city, or just filter if it returns all
+          // Assuming backend will handle filtering or return list
           const sorted = data.map(s => s.id).sort();
           setStationsList(sorted);
         }
@@ -31,7 +36,7 @@ const LiveAirQuality = () => {
       }
     };
     loadStations();
-  }, []);
+  }, [city]); // Reload when city changes
 
   const handleApply = () => {
     // Trigger refresh or just let state flow down
@@ -98,16 +103,31 @@ const LiveAirQuality = () => {
       </FilterBar>
 
       {/* Real-Time Map */}
-      <RealTimeMap selectedStation={selectedStation} selectedPollutant={selectedPollutant} />
+      <RealTimeMap
+        selectedStation={selectedStation}
+        selectedPollutant={selectedPollutant}
+        city={city}
+      />
 
       {/* Sensor Data and Live Trend */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SensorDataTable selectedStation={selectedStation} selectedPollutant={selectedPollutant} />
-        <LiveTrendChart selectedStation={selectedStation} selectedPollutant={selectedPollutant} />
+        <SensorDataTable
+          selectedStation={selectedStation}
+          selectedPollutant={selectedPollutant}
+          city={city}
+        />
+        <LiveTrendChart
+          selectedStation={selectedStation}
+          selectedPollutant={selectedPollutant}
+          city={city}
+        />
       </div>
 
       {/* Pollutant Comparison */}
-      <PollutantComparison selectedStation={selectedStation} />
+      <PollutantComparison
+        selectedStation={selectedStation}
+        city={city}
+      />
     </div>
   );
 };

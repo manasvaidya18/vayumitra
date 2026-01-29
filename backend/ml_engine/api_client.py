@@ -58,7 +58,9 @@ class MultiSourceAPIClient:
         'Mumbai': {'lat': 19.0760, 'lon': 72.8777},
         'Bangalore': {'lat': 12.9716, 'lon': 77.5946},
         'Kolkata': {'lat': 22.5726, 'lon': 88.3639},
-        'Pune': {'lat': 18.5204, 'lon': 73.8567}
+        'Pune': {'lat': 18.5204, 'lon': 73.8567},
+        'Chennai': {'lat': 13.0827, 'lon': 80.2707},
+        'Hyderabad': {'lat': 17.3850, 'lon': 78.4867}
     }
     
     def __init__(self, openweathermap_key=None, openaq_key=None, cpcb_key=None):
@@ -93,6 +95,23 @@ class MultiSourceAPIClient:
         print('[INFO] Using simulated data (no API keys or APIs unavailable)')
         return self._generate_simulated_data(city, hours)
 
+    def fetch_history_data(self, city='Delhi', days=7):
+        """
+        Fetch historical data specifically for visualization (e.g., Weekly Trend).
+        Prioritizes OpenWeatherMap History API as requested by user.
+        """
+        print(f"Fetching {days} days history for {city} via OpenWeatherMap...")
+        if self.owm_key:
+            # 24 hours * days
+            df = self._fetch_openweathermap(city, hours=days*24)
+            if df is not None and not df.empty:
+                return df
+                
+        # Fallback to simulated generated history if OWM fails
+        print("OWM History failed/missing. Using simulation.")
+        return self._generate_simulated_data(city, hours=days*24)
+
+
     def fetch_cpcb_current_stations(self, city='Delhi'):
         """Specific method to get station-wise breakdown for Heatmap."""
         if not self.cpcb_key:
@@ -114,11 +133,13 @@ class MultiSourceAPIClient:
             # This avoids API quirks with strings like "PM2.5" vs "PM 2.5"
             
             print(f"DEBUG: Calling CPCB OGD API: {url} with limit=500, city={city}")
-            response = requests.get(url, params=params, timeout=15)
+            print(f"DEBUG: Params: api-key={params['api-key'][:5]}***, filters[city]={params['filters[city]']}")
+            
+            response = requests.get(url, params=params, timeout=30)
             print(f"DEBUG: CPCB Response Status: {response.status_code}")
             
             if response.status_code != 200:
-                print(f"CPCB API Error: {response.status_code} - {response.text[:100]}")
+                print(f"CPCB API Error: {response.status_code} - {response.text[:200]}")
                 return None
                 
             data = response.json()
@@ -246,6 +267,7 @@ class MultiSourceAPIClient:
         """Fetch from OpenWeatherMap Air Pollution API."""
         try:
             coords = self.CITY_COORDS.get(city, self.CITY_COORDS['Delhi'])
+            print(f"DEBUG: Fetching OWM Data for City: {city} at Coords: {coords}")
             
             end_time = int(datetime.now().timestamp())
             start_time = int((datetime.now() - timedelta(hours=hours)).timestamp())
@@ -337,6 +359,11 @@ class MultiSourceAPIClient:
         else:  # Transition
             base_pm25 = 120
             base_aqi = 200
+            
+        # Adjust for cleaner cities
+        if city.lower() in ['pune', 'bangalore', 'chennai', 'hyderabad']:
+            base_pm25 *= 0.5
+            base_aqi *= 0.5
         
         records = []
         now = datetime.now()

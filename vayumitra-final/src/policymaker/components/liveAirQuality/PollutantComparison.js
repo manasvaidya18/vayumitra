@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import { fetchDashboardStats, fetchSensors } from '../../../api/services';
 
-const PollutantComparison = ({ selectedStation }) => {
+const PollutantComparison = ({ selectedStation, city }) => {
   const [pollutants, setPollutants] = useState([]);
   const [title, setTitle] = useState("📊 Pollutant Comparison");
 
@@ -10,7 +10,7 @@ const PollutantComparison = ({ selectedStation }) => {
     const loadData = async () => {
       try {
         if (selectedStation && selectedStation !== 'All Stations') {
-          const sensors = await fetchSensors();
+          const sensors = await fetchSensors(city);
           const station = sensors.find(s => s.id === selectedStation);
           if (station) {
             setTitle(`📊 ${selectedStation} Pollutants`);
@@ -27,14 +27,23 @@ const PollutantComparison = ({ selectedStation }) => {
           }
         }
 
+        // Use Citizen API (which respects city fallback) instead of generic dashboard stats which are static?
+        // fetchDashboardStats() grabs /data/dashboard_stats.json.
+        // We should calculate average from fetchSensors(city) instead to be dynamic!
         setTitle("📊 Pollutant Comparison (Avg across all stations)");
-        const stats = await fetchDashboardStats();
-        if (stats && stats.live_breakdown) {
-          const pList = Object.entries(stats.live_breakdown).map(([key, val]) => ({
-            name: key,
-            value: val,
-            status: getStatusEmoji(key, val)
-          }));
+        const sensors = await fetchSensors(city);
+        if (sensors.length > 0) {
+          // Calculate averages
+          const avg = (key) => Math.round(sensors.reduce((acc, s) => acc + (s[key] || 0), 0) / sensors.length);
+
+          const pList = [
+            { name: 'PM2.5', value: avg('pm25'), status: getStatusEmoji('PM2.5', avg('pm25')) },
+            { name: 'PM10', value: avg('pm10'), status: getStatusEmoji('PM10', avg('pm10')) },
+            { name: 'NO2', value: avg('no2'), status: getStatusEmoji('NO2', avg('no2')) },
+            { name: 'O3', value: avg('o3'), status: getStatusEmoji('O3', avg('o3')) },
+            { name: 'SO2', value: avg('so2'), status: getStatusEmoji('SO2', avg('so2')) },
+            { name: 'CO', value: avg('co'), status: getStatusEmoji('CO', avg('co')) },
+          ];
           setPollutants(pList);
         }
       } catch (e) {
@@ -42,7 +51,7 @@ const PollutantComparison = ({ selectedStation }) => {
       }
     };
     loadData();
-  }, [selectedStation]);
+  }, [selectedStation, city]);
 
   const getStatusEmoji = (name, value) => {
     // Simple thresholds

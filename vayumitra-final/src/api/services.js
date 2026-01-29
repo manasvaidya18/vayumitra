@@ -2,8 +2,8 @@ const BASE_URL = 'http://127.0.0.1:8000';
 
 // --- Policymaker API ---
 
-export const fetchSensors = async () => {
-    const res = await fetch(`${BASE_URL}/api/policymaker/sensors`);
+export const fetchSensors = async (city = 'Delhi') => {
+    const res = await fetch(`${BASE_URL}/api/policymaker/sensors?city=${city}`);
     if (!res.ok) throw new Error('Failed to fetch sensors');
     return res.json();
 };

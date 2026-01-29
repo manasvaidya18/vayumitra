@@ -93,30 +93,20 @@ async def get_ml_forecast(city: str = 'Delhi'):
 
 @router.get("/history")
 async def get_ml_history(city: str = 'Delhi', days: int = 7):
-    """Get historical AQI data for model accuracy comparison."""
-    if not ML_AVAILABLE:
-        raise HTTPException(status_code=503, detail="ML module not available")
-    
-    target_city = 'Pune' if city.lower() == 'pune' else 'Delhi'
-
+    """Get historical AQI data for charts using OpenWeatherMap."""
     try:
-        # Load historical data (CSV + Live)
-        df = prepare_historical_data(city=target_city)
-        if df is None:
-             raise HTTPException(status_code=404, detail=f"Insufficient data for {target_city}")
+        from ml_engine.api_client import MultiSourceAPIClient
+        client = MultiSourceAPIClient()
         
-        # Filter for requested duration
-        cutoff_date = pd.Timestamp.now().tz_localize(None) - timedelta(days=days)
+        # Use simple OWM fetch
+        df = client.fetch_history_data(city=city, days=days)
         
-        # Ensure regex/format match
-        if df['Datetime'].dt.tz is not None:
-             df['Datetime'] = df['Datetime'].dt.tz_localize(None)
-             
-        recent_history = df[df['Datetime'] >= cutoff_date].copy()
+        if df is None or df.empty:
+             raise HTTPException(status_code=404, detail=f"No history data for {city}")
         
         # Format for frontend
         output = []
-        for _, row in recent_history.iterrows():
+        for _, row in df.iterrows():
             output.append({
                 "datetime": row['Datetime'].isoformat(),
                 "hour": row['Datetime'].hour,
@@ -128,4 +118,5 @@ async def get_ml_history(city: str = 'Delhi', days: int = 7):
         
     except Exception as e:
         print(f"History fetch error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # Return empty list or basic fallback instead of crash
+        return []

@@ -2,19 +2,27 @@
 import React, { useEffect, useState } from 'react';
 import StatCard from '../common/StatCard';
 
-const AQIOverview = () => {
+const AQIOverview = ({ city = 'Delhi' }) => {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch('/data/dashboard_stats.json');
-        if (res.ok) {
-          const data = await res.json();
-          setStats(data);
-        }
+        // Fetch Live AQI
+        const aqiRes = await fetch(`/api/citizen/aqi?city=${city}`);
+        const aqiData = await aqiRes.json();
+
+        // Fetch Weekly History for Trend
+        const historyRes = await fetch(`/api/ml/history?city=${city}&days=7`);
+        const historyData = await historyRes.json();
+
+        setStats({
+          live_aqi: aqiData.aqi || 0,
+          weekly_trend: Array.isArray(historyData) ? historyData : []
+        });
+
       } catch (e) {
-        console.error(e);
+        console.error("Failed to fetch dashboard stats:", e);
       }
     };
 
@@ -24,7 +32,7 @@ const AQIOverview = () => {
     // Poll every 60 seconds
     const interval = setInterval(fetchStats, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [city]);
 
   if (!stats) return <div className="h-32 bg-slate-100 rounded-xl animate-pulse"></div>;
 

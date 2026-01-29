@@ -2,29 +2,37 @@ import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import { fetchHotspots } from '../../../api/services';
 
-const TopHotspots = ({ onSelectHotspot, timeFilter }) => {
+const TopHotspots = ({ onSelectHotspot, timeFilter, city }) => {
   const [hotspots, setHotspots] = useState([]);
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        let url = '/data/station_rankings.json';
-        if (timeFilter === 'week' || timeFilter === 'month') {
-          url = '/data/station_rankings_7d.json';
-        }
+        // Use live rankings API which is now city-aware
+        let url = `/api/policymaker/rankings?city=${city}`;
+
+        // For 'week'/'month', ideally backend should support history rankings
+        // But current rankings are live. We'll stick to live for now as per user request
+        // "in today it should show todys real time aqis"
+        // User asked "update station wise thing with city". 
+        // We'll use the same live endpoint since history aggregation for ranking is complex/not built yet.
 
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
           setHotspots(data);
+          // Auto-select first hotspot if none selected
+          if (data.length > 0) {
+            onSelectHotspot(data[0]);
+          }
         }
       } catch (error) {
         console.error("Error loading hotspots:", error);
       }
     };
     loadData();
-  }, [timeFilter]);
+  }, [timeFilter, city]);
 
   if (!hotspots.length) return <Card>Loading real-time hotspots...</Card>;
 

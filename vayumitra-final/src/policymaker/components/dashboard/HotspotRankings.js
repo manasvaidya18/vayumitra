@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import { TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 
-const HotspotRankings = () => {
+const HotspotRankings = ({ city = 'Delhi' }) => {
     const [rankings, setRankings] = useState([]);
     const [fullRankings, setFullRankings] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -13,7 +13,7 @@ const HotspotRankings = () => {
         const fetchRankings = async () => {
             try {
                 // Fetch real CPCB station rankings from backend-generated data
-                const response = await fetch('/data/station_rankings.json');
+                const response = await fetch(`/api/policymaker/rankings?city=${city}`);
                 if (response.ok) {
                     const data = await response.json();
 
@@ -42,8 +42,9 @@ const HotspotRankings = () => {
                 setLoading(false);
             }
         };
+
         fetchRankings();
-    }, []);
+    }, [city]);
 
     return (
         <Card>

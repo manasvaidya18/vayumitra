@@ -15,25 +15,19 @@ const BlockHeatmap = ({
         const fetchForecast = async () => {
             setLoading(true);
             try {
-                // Determine URL based on range if generic passed
+                // Determine URL based on range
+                // Use the passed dataUrl prop directly. The parent component handles the logic.
                 let url = dataUrl;
-                if (range === 'today' || range === 'week') {
-                    url = '/data/city_history_168h.json';
-                }
 
                 const res = await fetch(url);
                 if (res.ok) {
                     const data = await res.json();
 
-                    // Filter logic
-                    let filtered = data;
-                    if (range === 'today') {
-                        // Last 24 entries (assuming sorted newest last, but history usually sorted oldest first)
-                        // History file: sorted by time asc usually.
-                        // Let's take last 24 items
-                        filtered = data.slice(-24);
+                    if (!data) {
+                        console.error("BlockHeatmap: Received empty data from", url);
+                        setForecastData([]);
+                        return;
                     }
-                    // For week, take all (168h)
 
                     // Unified Data Parsing Logic
                     let parsedData = [];
@@ -42,26 +36,23 @@ const BlockHeatmap = ({
                     } else if (data.forecasts) {
                         parsedData = data.forecasts;
                     } else if (typeof data === 'object') {
-                        // Try to find an array value if wrapped
                         parsedData = Object.values(data).find(v => Array.isArray(v)) || [];
                     }
 
-                    if (parsedData.length === 0) {
-                        console.warn("Forecast data is empty or invalid structure", data);
-                    }
-
                     // Map 'datetime' (backend) to 'time' (frontend expected)
-                    // Also ensure we have 'aqi'
                     const mappedData = parsedData.map(item => ({
                         ...item,
-                        time: item.time || item.datetime, // Handle backend vs static file difference
-                        aqi: item.aqi || item.predicted_aqi // Handle 'predicted_aqi' from ML backend
+                        time: item.time || item.datetime,
+                        aqi: item.aqi || item.predicted_aqi
                     })).filter(item => item.time && item.aqi !== undefined);
 
+                    console.log(`BlockHeatmap: Loaded ${mappedData.length} points for ${range} from ${url}`);
                     setForecastData(mappedData);
+                } else {
+                    console.error(`BlockHeatmap API Error: ${res.status} ${res.statusText}`);
                 }
             } catch (err) {
-                console.error("Failed to fetch forecast/history", err);
+                console.error("Failed to fetch forecast/history in BlockHeatmap:", err);
             } finally {
                 setLoading(false);
             }
@@ -112,7 +103,7 @@ const BlockHeatmap = ({
                 <table className="w-full text-sm border-collapse">
                     <thead>
                         <tr>
-                            <th className="p-2 text-left text-slate-500 font-semibold border-b border-slate-200 sticky left-0 bg-white z-10 w-32">Date</th>
+                            <th className="p-2 text-left text-slate-500 font-semibold border-b border-slate-200 sticky left-0 bg-white z-10 w-48">Date / Daily Avg</th>
                             {hours.map(h => (
                                 <th key={h} className="p-1 text-center text-slate-400 font-normal border-b border-slate-200 min-w-[30px] text-[10px]">
                                     {h}h
@@ -121,34 +112,46 @@ const BlockHeatmap = ({
                         </tr>
                     </thead>
                     <tbody>
-                        {Object.entries(days).map(([dateLabel, hourValues], idx) => (
-                            <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                                <td className="p-2 font-bold text-slate-700 border-b border-slate-100 whitespace-nowrap sticky left-0 bg-white z-10 border-r border-slate-200">
-                                    {dateLabel}
-                                </td>
-                                {hourValues.map((val, hIdx) => {
-                                    if (val === null) {
-                                        return <td key={hIdx} className="p-1 border-b border-slate-100 bg-slate-50"></td>;
-                                    }
+                        {Object.entries(days).map(([dateLabel, hourValues], idx) => {
+                            // Calculate Daily Avg
+                            const validValues = hourValues.filter(v => v !== null);
+                            const dailyAvg = validValues.length ? Math.round(validValues.reduce((a, b) => a + b, 0) / validValues.length) : '-';
+                            const avgColor = typeof dailyAvg === 'number' ? getAQIColor(dailyAvg) : '#eee';
 
-                                    const color = getAQIColor(val);
-                                    // Text color logic
-                                    const textColor = (color === '#FFFF00' || color === '#92D050') ? '#000' : '#FFF';
+                            return (
+                                <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                                    <td className="p-2 font-bold text-slate-700 border-b border-slate-100 whitespace-nowrap sticky left-0 bg-white z-10 border-r border-slate-200">
+                                        <div className="flex justify-between items-center pr-2">
+                                            <span>{dateLabel}</span>
+                                            <span className="text-xs px-1.5 py-0.5 rounded text-white font-medium ml-2" style={{ backgroundColor: avgColor, color: (avgColor === '#FFFF00' || avgColor === '#92D050') ? '#000' : '#FFF' }}>
+                                                {dailyAvg}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    {hourValues.map((val, hIdx) => {
+                                        if (val === null) {
+                                            return <td key={hIdx} className="p-1 border-b border-slate-100 bg-slate-50"></td>;
+                                        }
 
-                                    return (
-                                        <td key={hIdx} className="p-0 border-b border-slate-100 border-r border-white/20">
-                                            <div
-                                                className="w-full h-10 flex items-center justify-center text-[10px] font-bold"
-                                                style={{ backgroundColor: color, color: textColor }}
-                                                title={`Hour: ${hIdx}:00 | AQI: ${Math.round(val)}`}
-                                            >
-                                                {Math.round(val)}
-                                            </div>
-                                        </td>
-                                    );
-                                })}
-                            </tr>
-                        ))}
+                                        const color = getAQIColor(val);
+                                        // Text color logic
+                                        const textColor = (color === '#FFFF00' || color === '#92D050') ? '#000' : '#FFF';
+
+                                        return (
+                                            <td key={hIdx} className="p-0 border-b border-slate-100 border-r border-white/20">
+                                                <div
+                                                    className="w-full h-10 flex items-center justify-center text-[10px] font-bold"
+                                                    style={{ backgroundColor: color, color: textColor }}
+                                                    title={`Hour: ${hIdx}:00 | AQI: ${Math.round(val)}`}
+                                                >
+                                                    {Math.round(val)}
+                                                </div>
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
