@@ -8,7 +8,10 @@ from database import engine
 import models
 
 # Routers
-from routes import auth, heatmap, citizen, chat, ml
+# Routers
+from citizen_backend.routes import citizen, chat, heatmap
+from auth import router as auth_module
+from ml_engine import router as ml_module
 from policymaker_backend.routes import router as policymaker_router
 
 # Load Environment
@@ -44,11 +47,12 @@ async def startup_event():
     asyncio.create_task(citizen.get_or_update_data())
 
 # Include Routers
-app.include_router(auth.router)
+# Include Routers
+app.include_router(auth_module.router)
 app.include_router(heatmap.router)
 app.include_router(citizen.router, prefix="/api/citizen", tags=["Citizen"])
 app.include_router(chat.router, prefix="/chat", tags=["Chat"])
-app.include_router(ml.router, prefix="/api/ml", tags=["ML"])
+app.include_router(ml_module.router, prefix="/api/ml", tags=["ML"])
 app.include_router(policymaker_router, prefix="/api/policymaker", tags=["Policymaker"])
 
 @app.get("/")

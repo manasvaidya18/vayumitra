@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from data_citizen import (
+from ..data_citizen import (
     getAQIData, getCleanAirScore, getHealthRiskData, getBestTimeData,
     getShockPredictorData, getGreenSuggestions, getWildlifeData, getTreeImpactData
 )
@@ -8,7 +8,7 @@ import pandas as pd
 from pydantic import BaseModel
 import asyncio
 from ml_engine.api_client import MultiSourceAPIClient
-from wildlife_config import SPECIES_CONFIG, SAFE_LIMITS
+from ..wildlife_config import SPECIES_CONFIG, SAFE_LIMITS
 
 router = APIRouter()
 

@@ -9,8 +9,7 @@ router = APIRouter()
 # Nugen API configuration
 # Nugen API configuration
 NUGEN_API_URL = "https://api.nugen.in/api/v3/agents/run-agents/ai_r_aqi/run/"
-# HARDCODED FOR DEBUGGING
-#API_KEY = "nugen-VaLBPFlmqM5S-vp0KGjZfg"
+API_KEY = os.getenv("NUGEN_API_KEY")
 print(f"DEBUG: Chat module loaded. Key present? {bool(API_KEY)}", flush=True)
 
 class ChatRequest(BaseModel):

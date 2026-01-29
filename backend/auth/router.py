@@ -9,7 +9,7 @@ from jose import jwt, JWTError
 
 from database import get_db
 import models
-import auth_utils
+from . import utils as auth_utils
 from email_service import send_verify_email, send_reset_email
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])

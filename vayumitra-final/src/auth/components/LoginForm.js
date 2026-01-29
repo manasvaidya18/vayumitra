@@ -47,7 +47,7 @@ const LoginForm = () => {
 
       // Navigate to appropriate dashboard
       if (role === "citizen") {
-        navigate("/citizen/dashboard");
+        navigate("/citizen");
       } else {
         navigate("/policymaker/dashboard");
       }
