@@ -1,28 +1,106 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Card from '../common/Card';
-import { fetchAlerts } from '../../../api/services';
+import { useCity } from '../../../context/CityContext';
 
 const RecentAlerts = () => {
+  const { city } = useCity();
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState([]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await fetchAlerts();
-        setAlerts(data);
+        // Fetch real sensor data
+        const res = await fetch(`/api/policymaker/sensors?city=${city}`);
+        if (res.ok) {
+          const sensors = await res.json();
+
+          // Generate alerts based on sensor readings
+          const generatedAlerts = [];
+          let alertId = 1;
+
+          sensors.forEach(sensor => {
+            // severe > 400
+            if (sensor.aqi > 400) {
+              generatedAlerts.push({
+                id: alertId++,
+                title: `Critical AQI at ${sensor.location}`,
+                description: `Severe pollution detected: ${sensor.aqi} AQI`,
+                time: 'Just now',
+                zone: sensor.location,
+                severity: 'severe'
+              });
+            }
+            // Very Poor > 300
+            else if (sensor.aqi > 300) {
+              generatedAlerts.push({
+                id: alertId++,
+                title: `Very Poor AQI at ${sensor.location}`,
+                description: `Hazardous air quality: ${sensor.aqi} AQI`,
+                time: '15 min ago',
+                zone: sensor.location,
+                severity: 'high'
+              });
+            }
+            // Poor > 200 (Common for Pune now after calibration)
+            else if (sensor.aqi > 200) {
+              generatedAlerts.push({
+                id: alertId++,
+                title: `Poor AQI at ${sensor.location}`,
+                description: `Unhealthy for sensitive groups: ${sensor.aqi} AQI`,
+                time: '30 min ago',
+                zone: sensor.location,
+                severity: 'medium'
+              });
+            }
+            // Moderate > 100 (Warning level)
+            else if (sensor.aqi > 100) {
+              generatedAlerts.push({
+                id: alertId++,
+                title: `Moderate AQI at ${sensor.location}`,
+                description: `Air quality is acceptable but moderate: ${sensor.aqi} AQI`,
+                time: '1 hour ago',
+                zone: sensor.location,
+                severity: 'low'
+              });
+            }
+            // Specific Pollutant Alerts
+            else if (sensor.pm25 > 60) {
+              generatedAlerts.push({
+                id: alertId++,
+                title: `Elevated PM2.5`,
+                description: `PM2.5 levels are rising: ${sensor.pm25} µg/m³`,
+                time: '45 min ago',
+                zone: sensor.location,
+                severity: 'medium'
+              });
+            }
+          });
+
+          // Sort by severity
+          const severityOrder = { severe: 0, high: 1, medium: 2, low: 3 };
+          generatedAlerts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+
+          setAlerts(generatedAlerts);
+        }
       } catch (error) {
-        console.error("Error loading alerts:", error);
+        console.error('Error loading alerts:', error);
       }
     };
     loadData();
-  }, []);
+
+    // Refresh every 2 minutes
+    const interval = setInterval(loadData, 120000);
+    return () => clearInterval(interval);
+  }, [city]);
 
   const getSeverityColor = (severity) => {
     const colors = {
       severe: 'bg-red-100 text-red-700 border-red-300',
-      high: 'bg-orange-100 text-orange-700 border-orange-300',
-      medium: 'bg-yellow-100 text-yellow-700 border-yellow-300',
-      low: 'bg-green-100 text-green-700 border-green-300'
+      high: 'bg-red-100 text-red-700 border-red-300',
+      medium: 'bg-orange-100 text-orange-700 border-orange-300',
+      low: 'bg-yellow-100 text-yellow-700 border-yellow-300'
     };
     return colors[severity] || colors.medium;
   };
@@ -37,7 +115,7 @@ const RecentAlerts = () => {
     return icons[severity] || '🟡';
   };
 
-  if (!alerts.length) return <Card>Loading alerts...</Card>;
+  if (!alerts.length) return <Card>No alerts currently</Card>;
 
   return (
     <Card>
@@ -61,7 +139,10 @@ const RecentAlerts = () => {
           </div>
         ))}
       </div>
-      <button className="w-full mt-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium text-sm transition-colors">
+      <button
+        onClick={() => navigate('/policymaker/forecast-warnings')}
+        className="w-full mt-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium text-sm transition-colors"
+      >
         View All Alerts →
       </button>
     </Card>

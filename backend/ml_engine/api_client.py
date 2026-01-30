@@ -299,16 +299,6 @@ class MultiSourceAPIClient:
                 dt = datetime.fromtimestamp(item['dt'])
                 components = item['components']
                 
-                # Simple AQI approx from PM2.5 for OWM data
-                pm25 = components.get('pm2_5', 0)
-                aqi_approx = 0
-                if pm25 <= 30: aqi_approx = pm25 * (50/30)
-                elif pm25 <= 60: aqi_approx = 50 + (pm25-30)*(50/30)
-                elif pm25 <= 90: aqi_approx = 100 + (pm25-60)*(100/30)
-                elif pm25 <= 120: aqi_approx = 200 + (pm25-90)*(100/30)
-                elif pm25 <= 250: aqi_approx = 300 + (pm25-120)*(100/130)
-                else: aqi_approx = 400 + (pm25-250)*(100/130)
-                
                 record = {
                     'Datetime': dt,
                     'PM2_5_ugm3': components.get('pm2_5', np.nan),
@@ -319,15 +309,18 @@ class MultiSourceAPIClient:
                     'SO2_ugm3': components.get('so2', np.nan),
                     'Temp_2m_C': 25.0,  
                     'Humidity_Percent': 60,
-                    'Wind_Speed_10m_kmh': 10.0,
-                    'AQI_computed': int(aqi_approx) # Critical for main.py
+                    'Wind_Speed_10m_kmh': 10.0
                 }
                 records.append(record)
             
             df = pd.DataFrame(records)
             df = df.sort_values('Datetime')
             
-            print(f'  [OK] Fetched {len(df)} records from OpenWeatherMap')
+            # Use proper Indian CPCB AQI calculation
+            from ml_engine.aqi_calculator import compute_aqi_for_dataframe
+            df = compute_aqi_for_dataframe(df, inplace=True)
+            
+            print(f'  [OK] Fetched {len(df)} records from OpenWeatherMap with CPCB AQI')
             return df
             
         except Exception as e:

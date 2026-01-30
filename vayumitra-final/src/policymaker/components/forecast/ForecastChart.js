@@ -3,20 +3,29 @@ import Card from '../common/Card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { fetchForecast } from '../../../api/services';
 
-const ForecastChart = () => {
+const ForecastChart = ({ city }) => {
   const [forecastData, setForecastData] = useState([]);
   const [metric, setMetric] = useState('aqi'); // 'aqi', 'PM2.5', 'PM10', 'NO2', 'all'
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await fetch('/data/city_forecast_72h.json');
+        // Fetch city-specific forecast
+        const response = await fetch(`/api/ml/forecast-3day?city=${city}`);
         if (response.ok) {
-          const data = await response.json();
-          const formatted = data.map(item => {
-            const d = new Date(item.time);
+          const rawData = await response.json();
+          // rawData: [ { time, predicted_aqi, ... } ]
+
+          const formatted = rawData.map(item => {
+            const d = new Date(item.datetime);
             return {
-              ...item, // Keep all pollutants
+              ...item,
+              aqi: item.predicted_aqi, // Map predicted_aqi to aqi for chart
+              // Map other pollutants if available, else keep generic or missing
+              "PM2.5": item.PM25 || item.pm25 || 0,
+              PM10: item.PM10 || item.pm10 || 0,
+              NO2: item.NO2 || item.no2 || 0,
+
               day: d.toLocaleDateString('en-IN', { weekday: 'short', hour: 'numeric', hour12: true }),
               label: `${d.getDate()}th ${d.getHours()}:00`,
               fullDate: d
@@ -29,7 +38,7 @@ const ForecastChart = () => {
       }
     };
     loadData();
-  }, []);
+  }, [city]);
 
   if (!forecastData.length) return <Card>Loading forecast chart...</Card>;
 
@@ -88,8 +97,8 @@ const ForecastChart = () => {
             key={m}
             onClick={() => setMetric(m)}
             className={`px-3 py-1 rounded-lg text-sm font-medium capitalize transition-colors ${metric === m
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              ? 'bg-indigo-600 text-white shadow-md'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
           >
             {m === 'all' ? 'All Pollutants' : m.toUpperCase()}

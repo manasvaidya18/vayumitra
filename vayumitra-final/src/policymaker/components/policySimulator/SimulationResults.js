@@ -2,26 +2,32 @@ import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import { calculatePolicyImpact } from '../../utils/helpers';
 
-const SimulationResults = ({ selectedPolicies }) => {
+const SimulationResults = ({ selectedPolicies, city }) => {
   const [currentAQI, setCurrentAQI] = useState(178); // Default fallback
   const [sourceBreakdown, setSourceBreakdown] = useState(null);
 
   useEffect(() => {
-    // Fetch real live data to base the simulation on
     const fetchData = async () => {
       try {
-        const res = await fetch('/data/dashboard_stats.json');
+        // Fetch live sensors for accurate City Average
+        const res = await fetch('/api/policymaker/sensors');
         if (res.ok) {
-          const data = await res.json();
-          if (data.live_aqi) setCurrentAQI(data.live_aqi);
+          const sensors = await res.json();
+          // Filter sensors for current city
+          const citySensors = sensors.filter(s => s.location.includes(city) || (city === 'Delhi' && !s.location.includes('Pune'))); // Fallback logic
 
-          // We prefer the breakdowns from source_attribution.json if available as they are normalized array
-          const srcRes = await fetch('/data/source_attribution.json');
+          if (citySensors.length > 0) {
+            const avg = Math.round(citySensors.reduce((sum, s) => sum + s.aqi, 0) / citySensors.length);
+            setCurrentAQI(avg);
+          } else {
+            // Fallback if no specific match (or mock data needed)
+            setCurrentAQI(city === 'Pune' ? 178 : 392);
+          }
+
+          // Fetch source breakdown for city (static for now or API if available)
+          const srcRes = await fetch(`/api/policymaker/source-attribution?city=${city}`);
           if (srcRes.ok) {
             setSourceBreakdown(await srcRes.json());
-          } else if (data.live_breakdown) {
-            // Fallback to stats object (needs normalization)
-            // But source_attribution.json is best match for our helper
           }
         }
       } catch (e) {
@@ -29,7 +35,7 @@ const SimulationResults = ({ selectedPolicies }) => {
       }
     };
     fetchData();
-  }, []);
+  }, [city]);
 
   const { newAQI, totalImpact, percentageChange } = calculatePolicyImpact(selectedPolicies, currentAQI, sourceBreakdown);
 

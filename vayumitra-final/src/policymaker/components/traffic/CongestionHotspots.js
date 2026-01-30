@@ -17,7 +17,7 @@ const CongestionHotspots = () => {
 
     const loadData = async () => {
       // --- DUMMY MODE FOR OTHER CITIES ---
-      if (city !== 'Delhi') {
+      if (!['Delhi', 'Pune'].includes(city)) {
         await new Promise(r => setTimeout(r, 700)); // Fake network
 
         const dummyData = {
@@ -31,6 +31,12 @@ const CongestionHotspots = () => {
             { location: 'Outer Ring Road (Marathahalli)', delay: 50, length: '4.1', aqiImpact: 70 },
             { location: 'Hebbal Flyover', delay: 25, length: '1.8', aqiImpact: 35 },
           ],
+          'Pune': [
+            { location: 'Hinjewadi Phase 2 Circle', delay: 38, length: '2.2', aqiImpact: 55 },
+            { location: 'University Road (E-Square)', delay: 25, length: '1.5', aqiImpact: 40 },
+            { location: 'Nagar Road (Phoenix Mall)', delay: 18, length: '1.1', aqiImpact: 28 },
+            { location: 'Swargate Junction', delay: 15, length: '0.8', aqiImpact: 22 }
+          ],
           'Hyderabad': [
             { location: 'Hitech City Main Rd', delay: 18, length: '1.2', aqiImpact: 25 },
             { location: 'Panjagutta Circle', delay: 12, length: '0.8', aqiImpact: 15 },
@@ -42,10 +48,10 @@ const CongestionHotspots = () => {
         return;
       }
 
+      // If we are here, it's Delhi or Pune (try live fetch)
       try {
-        // Fetch Live Incidents (Jams) for Delhi
-        // BBox Delhi: 76.85, 28.40 to 77.30, 28.88
-        const bbox = '76.85,28.40,77.30,28.88';
+        // Dynamic BBox
+        const bbox = city === 'Pune' ? '73.75,18.40,73.98,18.65' : '76.85,28.40,77.30,28.88';
         const url = `https://api.tomtom.com/traffic/services/5/incidentDetails?key=${TOMTOM_KEY}&bbox=${bbox}&fields={incidents{properties{iconCategory,magnitudeOfDelay,events{description},from,to,length}}}&language=en-GB`;
 
         const res = await fetch(url);

@@ -8,16 +8,22 @@ const AQIOverview = ({ city = 'Delhi' }) => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Fetch Live AQI
-        const aqiRes = await fetch(`/api/citizen/aqi?city=${city}`);
-        const aqiData = await aqiRes.json();
+        // Fetch Live Sensor Data from Policymaker API
+        const sensorsRes = await fetch(`/api/policymaker/sensors?city=${city}`);
+        const sensorsData = await sensorsRes.json();
+
+        // Calculate true average AQI from active sensors
+        const activeSensors = sensorsData.filter(s => s.aqi > 0 && s.status === 'Live');
+        const avgAQI = activeSensors.length > 0
+          ? Math.round(activeSensors.reduce((sum, sensor) => sum + sensor.aqi, 0) / activeSensors.length)
+          : 0;
 
         // Fetch Weekly History for Trend
         const historyRes = await fetch(`/api/ml/history?city=${city}&days=7`);
         const historyData = await historyRes.json();
 
         setStats({
-          live_aqi: aqiData.aqi || 0,
+          live_aqi: avgAQI,
           weekly_trend: Array.isArray(historyData) ? historyData : []
         });
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCity as useGlobalCity } from '../../context/CityContext';
 
 import TrafficMetrics from '../components/traffic/TrafficMetrics';
@@ -45,17 +45,37 @@ const TrafficUrban = () => {
         delay: Math.round((flow.currentTravelTime - flow.freeFlowTravelTime) / 60) || 0
       };
     } catch (e) {
-      return { congestion: 45, speed: 15, delay: 10 }; // Fallback
+      // Time-aware fallback
+      const h = new Date().getHours();
+      const isPeak = (h >= 8 && h <= 11) || (h >= 17 && h <= 20);
+      const isNight = (h >= 22 || h <= 5);
+
+      return {
+        congestion: isPeak ? 65 : isNight ? 5 : 25,
+        speed: isPeak ? 18 : isNight ? 55 : 35,
+        delay: isPeak ? 25 : isNight ? 0 : 10
+      };
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch Live Metrics on Load
+  const [liveMetrics, setLiveMetrics] = useState(null);
+
+  useEffect(() => {
+    const init = async () => {
+      const data = await fetchSnapshot();
+      setLiveMetrics(data);
+    };
+    init();
+  }, [city]);
+
   // 1. Traffic Report Logic
   const handleReport = async () => {
     setActiveModal('report');
     setModalData(null);
-    const data = await fetchSnapshot();
+    const data = liveMetrics || await fetchSnapshot(); // Use cached if available
     const date = new Date().toLocaleString();
 
     setModalData({
@@ -71,7 +91,7 @@ const TrafficUrban = () => {
             </ul>
           </div>
           <div className="text-sm text-slate-600">
-            <p>This report highlights significant congestion in Central Delhi. Immediate automated advisories have been logged.</p>
+            <p>This report highlights significant congestion in {city}. Immediate automated advisories have been logged.</p>
           </div>
         </div>
       )
@@ -82,7 +102,7 @@ const TrafficUrban = () => {
   const handleInterventions = async () => {
     setActiveModal('interventions');
     setModalData(null);
-    const data = await fetchSnapshot();
+    const data = liveMetrics || await fetchSnapshot();
 
     // Simple Rule Engine
     const suggestions = [];
@@ -113,11 +133,11 @@ const TrafficUrban = () => {
           <span>🚗</span>
           <span>Traffic & Urban Activity Monitoring</span>
         </h1>
-        <p className="text-slate-600 mt-1">Analyze traffic patterns and emission sources</p>
+        <p className="text-slate-600 mt-1">Analyze traffic patterns and emission sources in <b>{city}</b></p>
       </div>
 
       {/* Traffic Metrics */}
-      <TrafficMetrics />
+      <TrafficMetrics liveData={liveMetrics} />
 
       {/* Traffic Density Map */}
       <TrafficDensityMap />
@@ -136,12 +156,6 @@ const TrafficUrban = () => {
         <Button variant="primary" icon="📊" onClick={handleReport}>
           {loading && activeModal === 'report' ? 'Generating...' : 'Traffic Report'}
         </Button>
-        {/* <Button variant="secondary" icon="🚦" onClick={handleInterventions}>
-          {loading && activeModal === 'interventions' ? 'Analyzing...' : 'Suggest Interventions'}
-        </Button>
-        <Button variant="secondary" icon="📈" onClick={() => window.scrollTo(0, 0)}>
-          View Dashboard Trends
-        </Button> */}
       </div>
 
       {/* --- MODALS --- */}

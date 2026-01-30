@@ -8,18 +8,23 @@ const PollutantBreakdown = ({ city = 'Delhi' }) => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch(`/api/citizen/aqi?city=${city}`);
+        // Fetch from policymaker sensors API which has complete pollutant data
+        const res = await fetch(`/api/policymaker/sensors?city=${city}`);
         if (res.ok) {
-          const data = await res.json();
-          // Convert array from /api/citizen/aqi to object expected by component
-          // API returns: pollutants: [{name: 'PM2.5', value: 120}, ...]
-          // Component expects: { 'PM2.5': 120, 'PM10': ... }
+          const sensors = await res.json();
 
-          if (data.pollutants && Array.isArray(data.pollutants)) {
-            const breakdown = {};
-            data.pollutants.forEach(p => {
-              breakdown[p.name] = p.value;
-            });
+          // Calculate average pollutants from all active sensors
+          const activeSensors = sensors.filter(s => s.aqi > 0 && s.status === 'Live');
+
+          if (activeSensors.length > 0) {
+            const breakdown = {
+              'PM2.5': Math.round(activeSensors.reduce((sum, s) => sum + (s.pm25 || 0), 0) / activeSensors.length),
+              'PM10': Math.round(activeSensors.reduce((sum, s) => sum + (s.pm10 || 0), 0) / activeSensors.length),
+              'NO2': Math.round(activeSensors.reduce((sum, s) => sum + (s.no2 || 0), 0) / activeSensors.length),
+              'O3': Math.round(activeSensors.reduce((sum, s) => sum + (s.o3 || 0), 0) / activeSensors.length),
+              'SO2': Math.round(activeSensors.reduce((sum, s) => sum + (s.so2 || 0), 0) / activeSensors.length),
+              'CO': (activeSensors.reduce((sum, s) => sum + (s.co || 0), 0) / activeSensors.length).toFixed(1)
+            };
             setStats(breakdown);
           }
         }
@@ -54,9 +59,9 @@ const PollutantBreakdown = ({ city = 'Delhi' }) => {
       <h2 className="text-xl font-bold text-slate-800 mb-4">📊 Pollutant Breakdown (Live)</h2>
       <div className="space-y-4">
         {pollutants.map((pollutant) => {
-          // Calculate percentage for bar (cap at 100%)
-          // We use 'total width' as roughly 2x limit to show overflow
-          const percentage = Math.min((pollutant.value / (pollutant.limit * 2)) * 100, 100);
+          // Calculate percentage for bar
+          // Show 100% when value reaches limit, allow visual overflow with cap at 100%
+          const percentage = Math.min((pollutant.value / pollutant.limit) * 100, 100);
 
           return (
             <div key={pollutant.name}>

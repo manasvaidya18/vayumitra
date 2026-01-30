@@ -34,8 +34,8 @@ const TrafficSignals = () => {
 
   useEffect(() => {
     const fetchIncidents = async () => {
-      // If not Delhi, don't fetch incidents (Dummy mode = clean map or static)
-      if (city !== 'Delhi') {
+      // Use dynamic city check
+      if (!['Delhi', 'Pune'].includes(city)) {
         setIncidents([]);
         return;
       }
@@ -113,6 +113,7 @@ const TrafficDensityMap = () => {
   // Coordinates Mapping
   const cityCoords = {
     'Delhi': [28.6139, 77.2090],
+    'Pune': [18.5204, 73.8567],
     'Mumbai': [19.0760, 72.8777],
     'Bangalore': [12.9716, 77.5946],
     'Hyderabad': [17.3850, 78.4867]

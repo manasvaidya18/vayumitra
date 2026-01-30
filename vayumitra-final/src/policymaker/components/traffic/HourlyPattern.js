@@ -58,13 +58,14 @@ const HourlyPattern = () => {
         trendRatio = Math.max(0.7, Math.min(1.5, trendRatio));
 
         // Generate Chart Data
+        const baseScale = city === 'Delhi' ? 22000 : city === 'Pune' ? 6000 : 15000; // City Capacity Scale
         const chartData = standardProfile.map((val, hour) => {
           const h = hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`;
           // Apply trend ratio to future/past? simpler to apply to whole day for "Today's Trend"
           return {
             hour: h,
-            volume: Math.round(val * trendRatio * 1500), // Scale to rough vehicle volume
-            capacity: 120000 // Reference line
+            volume: Math.round(val * trendRatio * baseScale), // Scale to rough vehicle volume
+            capacity: 120000 // Reference line (unused visually but kept for scale)
           }
         });
 

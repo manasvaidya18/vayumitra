@@ -1,21 +1,28 @@
 
 import React, { useEffect, useState } from 'react';
 
-const ForecastCards = () => {
+const ForecastCards = ({ city }) => {
   const [forecastDays, setForecastDays] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await fetch('/data/city_forecast_72h.json');
+        setLoading(true);
+        // Use the ML Forecast API for the selected city
+        const response = await fetch(`/api/ml/forecast-3day?city=${city}`);
         if (response.ok) {
-          const data = await response.json();
+          const rawData = await response.json();
 
-          // Data is [ { time: "ISO", aqi: int }, ... ]
-          // We need to group by Day
+          // Data is [ { datetime: "ISO", predicted_aqi: int }, ... ]
+          // Map to expected format
+          const data = rawData.map(item => ({
+            time: item.datetime,
+            aqi: item.predicted_aqi
+          }));
+
+          // Group by Day
           const dailyMap = {};
-
           data.forEach(point => {
             const d = new Date(point.time);
             const dateKey = d.toLocaleDateString('en-IN', { weekday: 'long', month: 'short', day: 'numeric' });
@@ -27,7 +34,10 @@ const ForecastCards = () => {
             dailyMap[dateKey].count += 1;
           });
 
-          const days = Object.keys(dailyMap).slice(0, 3).map((key, index) => {
+          // Sort by date to ensure Today, Tomorrow order
+          const sortedKeys = Object.keys(dailyMap).sort((a, b) => dailyMap[a].date - dailyMap[b].date);
+
+          const days = sortedKeys.slice(0, 3).map((key, index) => {
             const item = dailyMap[key];
             const avgAQI = Math.round(item.sum / item.count);
 
@@ -40,7 +50,9 @@ const ForecastCards = () => {
             if (avgAQI > 300) { status = 'Very Poor'; color = 'bg-red-500'; }
             if (avgAQI > 400) { status = 'Severe'; color = 'bg-red-800'; }
 
-            const label = index === 0 ? 'Today' : index === 1 ? 'Tomorrow' : 'Day 3';
+            let label = 'Day ' + (index + 1);
+            if (index === 0) label = 'Today';
+            if (index === 1) label = 'Tomorrow';
 
             return {
               day: label + ` (${item.date.getDate()} ${item.date.toLocaleString('default', { month: 'short' })})`,
@@ -59,7 +71,7 @@ const ForecastCards = () => {
       }
     };
     loadData();
-  }, []);
+  }, [city]);
 
   if (loading) return (
     <div className="grid grid-cols-3 gap-4 animate-pulse">

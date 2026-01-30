@@ -45,6 +45,8 @@ async def startup_event():
     # Trigger the citizen data fetcher on startup
     import asyncio
     asyncio.create_task(citizen.get_or_update_data())
+    # Initialize ML Engine (Load Models)
+    await ml_module.init_ml()
 
 # Include Routers
 # Include Routers

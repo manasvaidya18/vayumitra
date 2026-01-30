@@ -2,26 +2,23 @@ import React, { useEffect, useState } from 'react';
 import Card from '../common/Card';
 import { fetchWeatherData } from '../../../api/services';
 
-const WeatherCorrelation = () => {
+const WeatherCorrelation = ({ city }) => {
   const [weatherData, setWeatherData] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await fetch('/data/dashboard_stats.json');
+        const response = await fetch(`/api/policymaker/weather?city=${city}`);
         if (response.ok) {
           const data = await response.json();
-          // Use the weather_real object we just added to backend
-          if (data.weather_real) {
-            setWeatherData(data.weather_real);
-          }
+          setWeatherData(data);
         }
       } catch (error) {
         console.error("Error loading weather data:", error);
       }
     };
     loadData();
-  }, []);
+  }, [city]);
 
   const getTrendArrow = (trend) => {
     if (trend === 'up') return '↑';

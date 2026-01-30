@@ -1,32 +1,44 @@
 import React from 'react';
 import Card from '../common/Card';
 
-const Timeline = () => {
+const Timeline = ({ selectedPolicies }) => {
+  // Group policies into phases
   const phases = [
     {
-      phase: 'Phase 1',
+      phase: 'Phase 1: Immediate',
       duration: '0-3 months',
-      actions: ['Congestion pricing', 'Emission monitoring'],
-      color: 'bg-indigo-100 border-indigo-300'
+      actions: selectedPolicies.filter(p => p.implementationTime <= 3).map(p => p.name),
+      color: 'bg-green-50 border-green-200'
     },
     {
-      phase: 'Phase 2',
-      duration: '3-6 months',
-      actions: ['Clean tech rollout', 'EV infrastructure'],
-      color: 'bg-purple-100 border-purple-300'
+      phase: 'Phase 2: Short Term',
+      duration: '3-12 months',
+      actions: selectedPolicies.filter(p => p.implementationTime > 3 && p.implementationTime <= 12).map(p => p.name),
+      color: 'bg-indigo-50 border-indigo-200'
     },
     {
-      phase: 'Phase 3',
-      duration: '6-12 months',
-      actions: ['Urban forestry', 'Long-term monitoring'],
-      color: 'bg-green-100 border-green-300'
+      phase: 'Phase 3: Long Term',
+      duration: '12+ months',
+      actions: selectedPolicies.filter(p => p.implementationTime > 12).map(p => p.name),
+      color: 'bg-purple-50 border-purple-200'
     },
-  ];
+  ].filter(phase => phase.actions.length > 0);
+
+  if (phases.length === 0) {
+    return (
+      <Card>
+        <h2 className="text-xl font-bold text-slate-800 mb-4">🗓️ Implementation Timeline</h2>
+        <p className="text-slate-500 text-center py-8">Select policies to generate a timeline.</p>
+      </Card>
+    );
+  }
+
+  const maxDuration = Math.max(...selectedPolicies.map(p => p.implementationTime || 0));
 
   return (
     <Card>
       <h2 className="text-xl font-bold text-slate-800 mb-4">🗓️ Implementation Timeline</h2>
-      
+
       <div className="space-y-4">
         {phases.map((phase, index) => (
           <div key={index} className={`p-4 rounded-lg border-2 ${phase.color}`}>
@@ -46,11 +58,11 @@ const Timeline = () => {
       {/* Progress Indicator */}
       <div className="mt-6">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-slate-700">Total Duration:</span>
-          <span className="text-sm font-bold text-indigo-600">12 months</span>
+          <span className="text-sm font-medium text-slate-700">Total Project Duration:</span>
+          <span className="text-sm font-bold text-indigo-600">{maxDuration} months</span>
         </div>
         <div className="w-full bg-slate-200 rounded-full h-3">
-          <div className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-green-500 rounded-full" style={{ width: '0%' }}></div>
+          <div className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-green-500 rounded-full" style={{ width: '100%' }}></div>
         </div>
       </div>
     </Card>

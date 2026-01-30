@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
-import { POLICY_CATEGORIES } from '../../utils/constants';
+import { CITY_POLICY_CATEGORIES } from '../../utils/constants';
 
-const PolicySelector = ({ selectedPolicies, setSelectedPolicies, onRunSimulation }) => {
+const PolicySelector = ({ city, selectedPolicies, setSelectedPolicies, onRunSimulation }) => {
+  const currentCategories = CITY_POLICY_CATEGORIES[city] || CITY_POLICY_CATEGORIES.Delhi;
+
   const handlePolicyToggle = (policy) => {
     const isSelected = selectedPolicies.find(p => p.id === policy.id);
     if (isSelected) {
@@ -19,10 +21,10 @@ const PolicySelector = ({ selectedPolicies, setSelectedPolicies, onRunSimulation
 
   return (
     <Card>
-      <h2 className="text-xl font-bold text-slate-800 mb-4">⚙️ Select Policy Interventions</h2>
-      
+      <h2 className="text-xl font-bold text-slate-800 mb-4">⚙️ Select Policy Interventions ({city})</h2>
+
       <div className="space-y-6">
-        {Object.entries(POLICY_CATEGORIES).map(([key, category]) => (
+        {Object.entries(currentCategories).map(([key, category]) => (
           <div key={key} className="border-b border-slate-200 pb-4 last:border-b-0">
             <h3 className="text-lg font-semibold text-slate-700 mb-3 flex items-center space-x-2">
               <span className="text-2xl">{category.icon}</span>
@@ -41,7 +43,10 @@ const PolicySelector = ({ selectedPolicies, setSelectedPolicies, onRunSimulation
                       onChange={() => handlePolicyToggle(policy)}
                       className="w-5 h-5 text-indigo-600"
                     />
-                    <span className="text-sm font-medium text-slate-700">{policy.name}</span>
+                    <div>
+                      <p className="text-sm font-medium text-slate-700">{policy.name}</p>
+                      <p className="text-xs text-slate-500 line-clamp-1" title={policy.description}>{policy.description}</p>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-xs text-slate-600">Impact:</span>
